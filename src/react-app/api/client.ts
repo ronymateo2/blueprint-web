@@ -1,0 +1,130 @@
+const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8787';
+
+function getToken(): string | null {
+  return localStorage.getItem('habit_token');
+}
+
+async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const token = getToken();
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(err.error ?? `HTTP ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  timezone: string;
+}
+
+export interface Reminder {
+  id: string;
+  habit_id: string;
+  time: string;
+  days: string;
+  enabled: number;
+}
+
+export interface Habit {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  type: 'count' | 'time' | 'yn' | 'qty' | 'at';
+  goal: number;
+  unit: string | null;
+  points: number;
+  sort_order: number;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+  reminders: Reminder[];
+}
+
+export interface Entry {
+  id: string;
+  user_id: string;
+  habit_id: string;
+  value: number;
+  points: number;
+  logged_at: string;
+  note: string | null;
+  created_at: string;
+  habit_name?: string;
+  habit_icon?: string;
+}
+
+export interface Stats {
+  totalPoints: number;
+  todayPoints: number;
+  streak: number;
+  level: number;
+  levelXp: number;
+  levelNext: number;
+  weekPct: number;
+  weeklyChart: number[];
+  heatmap: number[];
+  timezone: string;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+
+export const api = {
+  auth: {
+    googleUrl: () => `${BASE}/api/auth/google`,
+    me: () => req<User>('GET', '/api/auth/me'),
+    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User>('PATCH', '/api/auth/me', data),
+  },
+
+  habits: {
+    list: (archived = false) => req<Habit[]>('GET', `/api/habits${archived ? '?archived=1' : ''}`),
+    get: (id: string) => req<Habit>('GET', `/api/habits/${id}`),
+    create: (data: Omit<Habit, 'id' | 'user_id' | 'archived_at' | 'created_at' | 'updated_at' | 'reminders'>) =>
+      req<Habit>('POST', '/api/habits', data),
+    update: (id: string, data: Partial<Omit<Habit, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) =>
+      req<Habit>('PUT', `/api/habits/${id}`, data),
+    archive: (id: string) => req<{ ok: boolean }>('PATCH', `/api/habits/${id}/archive`),
+    unarchive: (id: string) => req<{ ok: boolean }>('PATCH', `/api/habits/${id}/unarchive`),
+    delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/habits/${id}`),
+  },
+
+  reminders: {
+    list: (habitId: string) => req<Reminder[]>('GET', `/api/habits/${habitId}/reminders`),
+    create: (habitId: string, data: Pick<Reminder, 'time' | 'days' | 'enabled'>) =>
+      req<Reminder>('POST', `/api/habits/${habitId}/reminders`, data),
+    update: (id: string, data: Partial<Pick<Reminder, 'time' | 'days' | 'enabled'>>) =>
+      req<Reminder>('PUT', `/api/reminders/${id}`, data),
+    delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/reminders/${id}`),
+  },
+
+  entries: {
+    list: (params?: { from?: string; to?: string; habit_id?: string }) => {
+      const q = new URLSearchParams();
+      if (params?.from) q.set('from', params.from);
+      if (params?.to) q.set('to', params.to);
+      if (params?.habit_id) q.set('habit_id', params.habit_id);
+      return req<Entry[]>('GET', `/api/entries?${q}`);
+    },
+    create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string }) =>
+      req<Entry>('POST', '/api/entries', data),
+    delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/entries/${id}`),
+  },
+
+  stats: {
+    get: () => req<Stats>('GET', '/api/stats'),
+  },
+};

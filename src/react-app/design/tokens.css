@@ -1,13 +1,11 @@
-@import "tailwindcss";
-
-@theme {
-  --color-ink: #2a2a2a;
-  --color-ink-soft: #5c5852;
-  --color-paper: #faf6ee;
-  --color-paper-2: #f2eddf;
-  --color-coral: oklch(0.72 0.13 32);
-  --color-coral-soft: oklch(0.92 0.05 32);
-  --color-coral-dark: oklch(0.58 0.15 32);
+:root {
+  --ink: #2a2a2a;
+  --ink-soft: #5c5852;
+  --paper: #faf6ee;
+  --paper-2: #f2eddf;
+  --coral: oklch(0.72 0.13 32);
+  --coral-soft: oklch(0.92 0.05 32);
+  --coral-dark: oklch(0.58 0.15 32);
 
   --font-display: 'Caveat', 'Patrick Hand', cursive;
   --font-hand: 'Patrick Hand', 'Comic Sans MS', cursive;
