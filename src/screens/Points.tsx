@@ -37,13 +37,13 @@ function BarChartNew({ bars }: BarChartNewProps) {
   const max = Math.max(1, ...bars.map(b => b.points));
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 90, padding: '2px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 104, padding: '2px 0' }}>
         {bars.map((b, i) => {
           const h = max === 0 ? 0 : Math.max(3, (b.points / max) * 100);
           return (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
               {b.points > 0 && (
-                <div className="font-hand" style={{ fontSize: 9, color: 'var(--ink-soft)' }}>{b.points}</div>
+                <div className="font-hand" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{b.points}</div>
               )}
               <div style={{
                 width: '100%', height: `${h}%`,
@@ -56,9 +56,9 @@ function BarChartNew({ bars }: BarChartNewProps) {
           );
         })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
         {bars.map((b, i) => (
-          <span key={i} className="font-hand text-ink-soft" style={{ flex: 1, textAlign: 'center', fontSize: 10 }}>
+          <span key={i} className="font-hand text-ink-soft" style={{ flex: 1, textAlign: 'center', fontSize: 12 }}>
             {b.label}
           </span>
         ))}
@@ -72,7 +72,7 @@ function HeatCell({ v, size = 10 }: { v: number; size?: number }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: 2,
-      border: '0.5px solid var(--ink)',
+      border: '1px solid var(--ink)',
       background: v <= 0 ? 'transparent' : `rgba(42,42,42,${opacity})`,
     }} />
   );
@@ -267,8 +267,8 @@ export function Points() {
         {/* Bar chart */}
         <SketchBox padding={10}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }} className="font-hand text-ink-soft">
-            <span style={{ fontSize: 12 }}>{rangeLabel(period)}</span>
-            <span style={{ fontSize: 12 }}><b>{barsTotal}</b> pts</span>
+            <span style={{ fontSize: 13 }}>{rangeLabel(period)}</span>
+            <span style={{ fontSize: 13 }}><b>{barsTotal}</b> pts</span>
           </div>
           <div style={{ marginTop: 6 }}>
             <BarChartNew bars={bars} />
@@ -277,9 +277,9 @@ export function Points() {
 
         {/* Per-habit heatmap */}
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }} className="font-hand text-ink-soft">
-            <span style={{ fontSize: 12 }}>Calor por hábito · 4 semanas</span>
-            <span style={{ fontSize: 9 }}>□ ▤ ▥ ▦ ▩</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="font-hand text-ink-soft">
+            <span style={{ fontSize: 13 }}>Calor por hábito · 4 semanas</span>
+            <span style={{ fontSize: 12 }}>□ ▤ ▥ ▦ ▩</span>
           </div>
           <SketchBox padding={8} style={{ marginTop: 4 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -291,11 +291,11 @@ export function Points() {
                 return (
                   <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <HandIcon kind={h.icon} size={16} />
-                    <span className="font-hand" style={{ fontSize: 12, width: 58, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span className="font-hand" style={{ fontSize: 13, width: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {h.name}
                     </span>
-                    <div style={{ flex: 1, display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)', gap: 2 }}>
-                      {cells.map((v, i) => <HeatCell key={i} v={v} size={8} />)}
+                    <div style={{ flex: 1, display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 10px)', gridAutoColumns: 10, gap: 3, justifyContent: 'end' }}>
+                      {cells.map((v, i) => <HeatCell key={i} v={v} size={10} />)}
                     </div>
                   </div>
                 );
