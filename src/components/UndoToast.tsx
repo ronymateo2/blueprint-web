@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowCounterClockwise } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon } from '@phosphor-icons/react';
 import { Btn } from './Btn';
 
 interface UndoToastProps {
@@ -38,7 +38,7 @@ export function UndoToast({ text, onUndo, onDismiss, durationMs = 4000 }: UndoTo
           cierra en {remaining}s
         </span>
       </div>
-      <Btn variant="danger" size="xs" onClick={onUndo}><ArrowCounterClockwise size={14} /> Deshacer</Btn>
+      <Btn variant="danger" size="xs" onClick={onUndo}><ArrowCounterClockwiseIcon size={14} /> Deshacer</Btn>
     </div>
   );
 }
