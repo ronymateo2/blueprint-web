@@ -24,7 +24,7 @@ export function BarChart({ values, labels = ['L','M','X','J','V','S','D'], activ
           />
         ))}
       </div>
-      <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 10, marginTop: 2 }}>
+      <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>
         {labels.map((l) => <span key={l}>{l}</span>)}
       </div>
     </div>

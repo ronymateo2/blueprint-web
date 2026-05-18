@@ -35,7 +35,7 @@ export function Points() {
       {/* Header */}
       <div style={{ padding: '16px 18px 0' }}>
         <div className="font-display leading-none" style={{ fontSize: 34 }}>Puntos</div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 2 }}>
+        <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
           Nivel {stats.level} · {levelName(stats.level)}
         </div>
       </div>
@@ -50,7 +50,7 @@ export function Points() {
               <div className="font-display leading-none" style={{ fontSize: 28 }}>
                 {stats.totalPoints.toLocaleString('es')} XP
               </div>
-              <div className="font-hand text-ink-soft" style={{ fontSize: 12 }}>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
                 {stats.levelNext - stats.levelXp} para nivel {stats.level + 1}
               </div>
             </div>
@@ -69,8 +69,8 @@ export function Points() {
           ].map((s) => (
             <SketchBox key={s.label} padding={8} className="flex-1 flex flex-col items-center gap-[2px]">
               <HandIcon kind={s.icon} size={20} />
-              <span className="font-display leading-none" style={{ fontSize: 20 }}>{s.value}</span>
-              <span className="font-hand text-ink-soft" style={{ fontSize: 11 }}>{s.label}</span>
+              <span className="font-display leading-none" style={{ fontSize: 22 }}>{s.value}</span>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{s.label}</span>
             </SketchBox>
           ))}
         </div>
@@ -87,7 +87,7 @@ export function Points() {
                 border: `1.6px solid var(--ink)`, borderRadius: 'var(--radius-pill)',
                 background: i === activeTab ? 'var(--ink)' : 'transparent',
                 color: i === activeTab ? 'var(--paper)' : 'var(--ink)',
-                fontSize: 13,
+                fontSize: 15,
                 WebkitTapHighlightColor: 'transparent',
               }}
             >{t}</button>
@@ -96,7 +96,7 @@ export function Points() {
 
         {/* Bar chart */}
         <SketchBox padding={10}>
-          <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 11, marginBottom: 4 }}>
+          <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 4 }}>
             <span>Esta semana</span>
             <span>{stats.weeklyChart.reduce((s, v) => s + v, 0).toLocaleString('es')} pts</span>
           </div>
@@ -105,9 +105,9 @@ export function Points() {
 
         {/* Heatmap */}
         <div>
-          <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 12, marginBottom: 4 }}>
+          <div className="flex justify-between font-hand text-ink-soft" style={{ fontSize: 14, marginBottom: 4 }}>
             <span>Últimas 14 semanas</span>
-            <span style={{ fontSize: 10 }}>menos · □ □ ■ ■ · más</span>
+            <span style={{ fontSize: 12 }}>menos · □ □ ■ ■ · más</span>
           </div>
           <SketchBox padding={10}>
             <Heatmap data={stats.heatmap} weeks={14} cellSize={12} />

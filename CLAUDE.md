@@ -107,6 +107,27 @@ Token stored in `localStorage["habit_token"]`. Set by `AuthCallback` after Googl
 - Max width: 430px centered (mobile-first PWA)
 - Sketchy aesthetic: `1.5–1.8px solid` borders, `shadow-sketch` class, `border-radius` from token vars
 
+### Typography Scale (Apple Health baseline)
+
+All font sizes are **inline `style={{ fontSize: N }}`** — not Tailwind text-* classes. Minimum is 12px.
+
+| px | Role |
+|----|------|
+| 38 | Screen hero (e.g. "Hoy") |
+| 34 | Screen title (e.g. "Puntos", "Histórico") |
+| 28 | Card hero (XP total) |
+| 24 | Section value ("X / Y hábitos") |
+| 22 | Item title (habit name, stat pill values) |
+| 17 | Body / callout (toast text, button normal, tz value) |
+| 16 | Subheadline (level subtitle, pts·racha, empty state) |
+| 15 | Body secondary (date label, "quedan X", entry rows, period tabs) |
+| 14 | Caption primary (habit subtitle, XP hint, heatmap headers) |
+| 13 | Caption secondary (stat labels, "Esta semana", countdown, tz section label) |
+| 12 | Micro label (bar chart days, heatmap legend, tab bar labels) |
+
+`SketchButton`: `small=true` → 14px, normal → 17px.
+`font-display` for numbers/titles. `font-hand` for body/labels.
+
 ### Tailwind token → class reference
 | CSS var | Tailwind class |
 |---------|---------------|

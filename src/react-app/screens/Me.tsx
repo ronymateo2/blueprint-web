@@ -46,20 +46,20 @@ export function Me() {
           )}
           <div>
             <div className="font-display leading-none" style={{ fontSize: 22 }}>{user?.display_name ?? 'Usuario'}</div>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 2 }}>{user?.email}</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2 }}>{user?.email}</div>
           </div>
         </SketchBox>
 
         {/* Timezone */}
         <SketchBox padding={12}>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Zona horaria</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Zona horaria</div>
           {editingTz ? (
             <div className="flex flex-col gap-[8px]">
               <select
                 value={tz}
                 onChange={(e) => setTz(e.target.value)}
                 className="font-hand bg-paper text-ink outline-none"
-                style={{ fontSize: 14, border: '1px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
+                style={{ fontSize: 16, border: '1px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
               >
                 {TIMEZONES.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
@@ -70,7 +70,7 @@ export function Me() {
             </div>
           ) : (
             <div className="flex items-center justify-between">
-              <span className="font-hand" style={{ fontSize: 15 }}>{user?.timezone ?? 'UTC'}</span>
+              <span className="font-hand" style={{ fontSize: 17 }}>{user?.timezone ?? 'UTC'}</span>
               <SketchButton small onClick={() => setEditingTz(true)}>Cambiar</SketchButton>
             </div>
           )}

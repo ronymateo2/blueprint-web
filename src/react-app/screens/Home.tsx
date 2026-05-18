@@ -73,7 +73,7 @@ export function Home() {
     <div className="screen">
       {/* Header */}
       <div className="flex items-center justify-between" style={{ padding: '14px 18px 0' }}>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{formatDate()}</span>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 15 }}>{formatDate()}</span>
         <button onClick={() => navigate('/me')} className="bg-transparent border-none cursor-pointer p-[4px]">
           <HandIcon kind="heart" size={20} />
         </button>
@@ -83,8 +83,8 @@ export function Home() {
         <div className="font-display leading-none" style={{ fontSize: 38 }}>
           Hoy <Scribble width={52} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
         </div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 2 }}>
-          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0} días 🔥
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 16, marginTop: 2 }}>
+          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0} días <HandIcon kind="fire" size={16} color="var(--coral)" />
         </div>
       </div>
 
@@ -92,9 +92,11 @@ export function Home() {
       <div className="flex items-center gap-[14px]" style={{ padding: '6px 18px 10px' }}>
         <Ring size={86} value={dayPct} label={`${Math.round(dayPct * 100)}%`} sublabel="del día" color="var(--coral)" stroke={7} />
         <div className="flex-1 flex flex-col gap-[4px]">
-          <span className="font-display leading-none" style={{ fontSize: 22 }}>{doneHabits} / {totalHabits} hábitos</span>
-          <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
-            {totalHabits - doneHabits > 0 ? `quedan ${totalHabits - doneHabits} por completar` : '¡Todo listo por hoy! 🎉'}
+          <span className="font-display leading-none" style={{ fontSize: 24 }}>{doneHabits} / {totalHabits} hábitos</span>
+          <span className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15 }}>
+            {totalHabits - doneHabits > 0
+              ? `quedan ${totalHabits - doneHabits} por completar`
+              : <><HandIcon kind="check" size={15} color="var(--coral)" /> ¡Todo listo por hoy!</>}
           </span>
         </div>
       </div>
@@ -122,8 +124,8 @@ export function Home() {
               >
                 <IconTile kind={h.icon} size={40} />
                 <div className="flex-1 min-w-0">
-                  <div className={`font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap${done ? ' line-through' : ''}`} style={{ fontSize: 20 }}>{h.name}</div>
-                  <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>
+                  <div className={`font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap${done ? ' line-through' : ''}`} style={{ fontSize: 22 }}>{h.name}</div>
+                  <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 2 }}>
                     {habitSubtitle(h, sum)}
                   </div>
                 </div>

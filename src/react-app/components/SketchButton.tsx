@@ -12,7 +12,7 @@ export function SketchButton({ children, accent = false, filled = false, small =
     <button
       {...rest}
       style={{
-        fontSize: small ? 13 : 15,
+        fontSize: small ? 14 : 17,
         border: `1.6px solid ${c}`,
         borderRadius: 'var(--radius-pill)',
         padding: small ? '4px 12px' : '8px 18px',

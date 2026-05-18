@@ -44,10 +44,10 @@ export function Ring({
       {(label !== undefined || sublabel !== undefined) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           {label !== undefined && (
-            <span className="font-display leading-none" style={{ fontSize: size * 0.22 }}>{label}</span>
+            <span className="font-display leading-none" style={{ fontSize: Math.max(13, size * 0.28) }}>{label}</span>
           )}
           {sublabel !== undefined && (
-            <span className="font-hand text-ink-soft" style={{ fontSize: size * 0.1, marginTop: 2, lineHeight: 1.1 }}>
+            <span className="font-hand text-ink-soft" style={{ fontSize: Math.max(10, size * 0.11), marginTop: 2, lineHeight: 1.1 }}>
               {sublabel}
             </span>
           )}

@@ -32,8 +32,8 @@ export function UndoToast({ text, onUndo, onDismiss, durationMs = 4000 }: UndoTo
       }}
     >
       <div className="flex flex-col">
-        <span className="font-hand" style={{ fontSize: 15 }}>Registrado · {text}</span>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 11 }}>
+        <span className="font-hand" style={{ fontSize: 17 }}>Registrado · {text}</span>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
           cierra en {remaining}s
         </span>
       </div>

@@ -55,7 +55,7 @@ export function History() {
             style={{
               padding: '5px 0',
               borderBottom: `${i === activeTab ? 2.5 : 1.5}px solid ${i === activeTab ? 'var(--coral)' : 'var(--ink-soft)'}`,
-              fontSize: 13,
+              fontSize: 15,
               color: i === activeTab ? 'var(--ink)' : 'var(--ink-soft)',
               border: 'none',
               WebkitTapHighlightColor: 'transparent',
@@ -68,14 +68,14 @@ export function History() {
 
         {/* Per-habit heatmap rows */}
         <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginBottom: 6 }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginBottom: 6 }}>
             Calor por hábito · 14 semanas
           </div>
           <div className="flex flex-col gap-[6px]">
             {habits.slice(0, 6).map((h) => (
               <div key={h.id} className="flex items-center gap-[8px]">
                 <HandIcon kind={h.icon} size={16} />
-                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 12, width: 64 }}>{h.name}</span>
+                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 14, width: 72 }}>{h.name}</span>
                 <div className="flex-1 grid gap-[2px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}>
                   {habitHeatmap(h.id).slice(-28).map((v, i) => (
                     <div
@@ -95,13 +95,13 @@ export function History() {
 
         {/* Recent events */}
         <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginBottom: 6 }}>RECIENTES</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginBottom: 6 }}>RECIENTES</div>
           {recent.length === 0 ? (
-            <div className="font-hand text-ink-soft" style={{ fontSize: 14, padding: '8px 0' }}>Sin registros en este período</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 16, padding: '8px 0' }}>Sin registros en este período</div>
           ) : (
             recent.map((e) => (
               <div key={e.id} className="flex justify-between items-center font-hand" style={{
-                fontSize: 13,
+                fontSize: 15,
                 padding: '5px 0', borderBottom: '1px dashed var(--ink-soft)',
               }}>
                 <span className="text-ink-soft" style={{ width: 44 }}>{formatTime(e.logged_at)}</span>

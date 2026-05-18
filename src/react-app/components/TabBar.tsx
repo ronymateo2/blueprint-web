@@ -32,7 +32,7 @@ export function TabBar() {
             style={{ padding: '2px 8px', WebkitTapHighlightColor: 'transparent' }}
           >
             <HandIcon kind={tab.icon} size={20} />
-            <span style={{ fontSize: 11 }}>{tab.label}</span>
+            <span style={{ fontSize: 12 }}>{tab.label}</span>
             {isActive && <Scribble width={28} strokeWidth={2} />}
           </button>
         );
