@@ -172,7 +172,16 @@ Border: `1px solid var(--ink)` always visible.
 
 ## Icon Set
 
-20 hand-drawn SVG icons in `HandIcon.tsx`. Reference by `kind` string:
+**No emojis.** Use [Phosphor Icons](https://phosphoricons.com/) (`@phosphor-icons/react`) for all UI icons. Emojis are inconsistent across platforms and break the hand-drawn aesthetic.
+
+```tsx
+import { Fire, Bell, CheckCircle } from '@phosphor-icons/react';
+<Fire size={20} weight="regular" />
+```
+
+Weights: `regular` for most UI, `bold` for emphasis, `fill` for active/selected states.
+
+20 hand-drawn SVG icons in `HandIcon.tsx` also available. Reference by `kind` string:
 
 `dish` `water` `mug` `pill` `book` `run` `dumb` `sun` `moon` `fire` `star` `leaf` `bolt` `clock` `target` `bell` `heart` `music` `phone` `plus` `check`
 
@@ -192,3 +201,4 @@ Render at consistent sizes: `16px` (list rows), `20px` (tab bar), `24px` (header
 | `rounded-[14px]` or `rounded-md` for cards | `border-radius: 8px` (bypasses design scale) |
 | Tailwind classes for static styles | Inline `style={{}}` for static values |
 | `style={{ WebkitTapHighlightColor: 'transparent' }}` | Forgetting this (causes blue flash on iOS) |
+| Phosphor Icons (`phosphor-react`) for all UI icons | Emojis — inconsistent rendering, breaks aesthetic |

@@ -77,6 +77,64 @@ function Stepper({ value, onChange, min = 0, max = 999, big = false }: StepperPr
   );
 }
 
+interface EditEntrySheetProps {
+  habit: ReturnType<typeof useHabits>['habits'][number];
+  entry: Entry;
+  amount: number;
+  onAmountChange: (v: number) => void;
+  onSave: () => Promise<void>;
+  onDelete: () => Promise<void>;
+  onClose: () => void;
+}
+
+function EditEntrySheet({ habit, entry, amount, onAmountChange, onSave, onDelete, onClose }: EditEntrySheetProps) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="font-display" style={{ fontSize: 28 }}>Editar registro</div>
+      <div className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
+        {habit.name} · {shortTime(entry.logged_at)}
+      </div>
+      {habit.type !== 'yn' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px' }}>
+          <span className="font-hand" style={{ fontSize: 16 }}>cantidad{habit.type === 'time' ? ' (min)' : ''}</span>
+          <Stepper value={amount} onChange={onAmountChange} min={1} max={habit.type === 'time' ? 240 : 50} />
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+        <button
+          onClick={() => void onDelete()}
+          className="font-hand cursor-pointer flex-1"
+          style={{
+            padding: '14px 0', textAlign: 'center', borderRadius: 999,
+            border: '1.8px solid var(--coral)', color: 'var(--coral)',
+            fontSize: 17, background: 'transparent',
+          }}
+        >Borrar</button>
+        {habit.type !== 'yn' ? (
+          <button
+            onClick={() => void onSave()}
+            className="font-hand cursor-pointer"
+            style={{
+              flex: 1.5, padding: '14px 0', textAlign: 'center', borderRadius: 999,
+              border: '1.8px solid var(--ink)', background: 'var(--ink)',
+              color: 'var(--paper)', fontSize: 17,
+            }}
+          >Guardar</button>
+        ) : (
+          <button
+            onClick={onClose}
+            className="font-hand cursor-pointer"
+            style={{
+              flex: 1.5, padding: '14px 0', textAlign: 'center', borderRadius: 999,
+              border: '1.8px solid var(--ink)', fontSize: 17, background: 'transparent',
+            }}
+          >Cerrar</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface QuickLogBodyProps {
   habit: ReturnType<typeof useHabits>['habits'][number];
   todaySum: number;
@@ -422,49 +480,15 @@ export function QuickAction() {
       {/* Edit entry sheet */}
       <BottomSheet open={!!editEntry} onClose={() => setEditEntry(null)}>
         {editEntry && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="font-display" style={{ fontSize: 22 }}>Editar registro</div>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
-              {habit.name} · {shortTime(editEntry.logged_at)}
-            </div>
-            {habit.type !== 'yn' && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
-                <span className="font-hand" style={{ fontSize: 14 }}>cantidad</span>
-                <Stepper value={editAmount} onChange={setEditAmount} min={1} max={240} />
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => void deleteEntryEdit()}
-                className="font-hand cursor-pointer flex-1"
-                style={{
-                  padding: 12, textAlign: 'center', borderRadius: 999,
-                  border: '1.8px solid var(--coral)', color: 'var(--coral)',
-                  fontSize: 16, background: 'transparent',
-                }}
-              >Borrar</button>
-              {habit.type !== 'yn' ? (
-                <button
-                  onClick={() => void saveEntryEdit()}
-                  className="font-hand cursor-pointer"
-                  style={{
-                    flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
-                    border: '1.8px solid var(--ink)', background: 'var(--ink)',
-                    color: 'var(--paper)', fontSize: 16,
-                  }}
-                >Guardar</button>
-              ) : (
-                <button
-                  onClick={() => setEditEntry(null)}
-                  className="font-hand cursor-pointer"
-                  style={{
-                    flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
-                    border: '1.8px solid var(--ink)', fontSize: 16, background: 'transparent',
-                  }}
-                >Cerrar</button>
-              )}
-            </div>
-          </div>
+          <EditEntrySheet
+            habit={habit}
+            entry={editEntry}
+            amount={editAmount}
+            onAmountChange={setEditAmount}
+            onSave={saveEntryEdit}
+            onDelete={deleteEntryEdit}
+            onClose={() => setEditEntry(null)}
+          />
         )}
       </BottomSheet>
 

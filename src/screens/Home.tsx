@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Fire, Confetti } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -30,20 +31,50 @@ function habitSubtitle(h: Habit, todaySum: number): string {
   }
 }
 
+// 0=Mon … 6=Sun (ISO week order)
+const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
 function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
-  const data = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
-  const max = Math.max(1, ...data);
+  const raw = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
+  const todayDow = new Date().getDay(); // JS: 0=Sun,1=Mon…6=Sat
+  const todayIso = todayDow === 0 ? 6 : todayDow - 1; // 0=Mon…6=Sun
+
+  // Map each value to its ISO day-of-week slot
+  const slots: { v: number; iso: number }[] = raw.map((v, i) => {
+    const offset = raw.length - 1 - i;
+    const jsDay = (todayDow - offset + 7) % 7;
+    const iso = jsDay === 0 ? 6 : jsDay - 1;
+    return { v, iso };
+  });
+  // Sort Mon→Sun
+  slots.sort((a, b) => a.iso - b.iso);
+
+  const max = Math.max(1, ...slots.map(s => s.v));
+
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 24 }}>
-      {data.map((v, i) => (
-        <div key={i} style={{
-          flex: 1,
-          height: `${Math.max(14, (v / max) * 100)}%`,
-          background: i === data.length - 1 ? 'var(--coral)' : 'var(--ink)',
-          opacity: i === data.length - 1 ? 1 : 0.35,
-          borderRadius: 2,
-        }} />
-      ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 24 }}>
+        {slots.map(({ v, iso }) => (
+          <div key={iso} style={{
+            flex: 1,
+            height: `${Math.max(14, (v / max) * 100)}%`,
+            background: iso === todayIso ? 'var(--coral)' : 'var(--ink)',
+            opacity: iso === todayIso ? 1 : 0.35,
+            borderRadius: 2,
+          }} />
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 3 }}>
+        {slots.map(({ iso }) => (
+          <div key={iso} className="font-hand" style={{
+            flex: 1,
+            textAlign: 'center',
+            fontSize: 10,
+            color: iso === todayIso ? 'var(--coral)' : 'var(--ink-soft)',
+            fontWeight: iso === todayIso ? 600 : 400,
+          }}>{DAY_LETTERS[iso]}</div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -115,7 +146,7 @@ export function Home() {
         </div>
         <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 16, marginTop: 4 }}>
           {stats?.todayPoints ?? 0} pts hoy · racha {stats?.streak ?? 0}d
-          {(stats?.streak ?? 0) >= 3 && ' 🔥'}
+          {(stats?.streak ?? 0) >= 3 && <Fire size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
         </div>
       </div>
 
@@ -140,7 +171,7 @@ export function Home() {
             </span>
           </div>
           <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? ' · ¡completo! 🎉' : ''}
+            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <Confetti size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
           </span>
           {weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
         </div>

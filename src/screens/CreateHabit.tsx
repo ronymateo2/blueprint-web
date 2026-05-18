@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
-import { IconTile } from '../components/IconTile';
-import { SketchBox } from '../components/SketchBox';
 import { HandIcon } from '../components/HandIcon';
 
 const ICONS = [
@@ -118,19 +116,6 @@ export function CreateHabit() {
       </div>
 
       <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 18px 24px' }}>
-
-        {/* Preview card */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 12px' }}>
-          <SketchBox padding={12} radius={16} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper-2)' }}>
-            <IconTile kind={icon} size={48} />
-            <div>
-              <div className="font-display" style={{ fontSize: 24, lineHeight: 1 }}>{name || 'Nombre del hábito'}</div>
-              <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>
-                {TYPES.find(t => t.id === type)?.label} · meta {goal}{type === 'time' ? ' min' : ''} · +{pts} pts
-              </div>
-            </div>
-          </SketchBox>
-        </div>
 
         {/* Name */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
