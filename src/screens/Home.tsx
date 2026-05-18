@@ -73,27 +73,27 @@ export function Home() {
     <div className="screen">
       {/* Header */}
       <div className="flex items-center justify-between" style={{ padding: '14px 18px 0' }}>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 15 }}>{formatDate()}</span>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 17 }}>{formatDate()}</span>
         <button onClick={() => navigate('/me')} className="bg-transparent border-none cursor-pointer p-[4px]">
           <HandIcon kind="heart" size={20} />
         </button>
       </div>
 
       <div style={{ padding: '2px 18px 6px' }}>
-        <div className="font-display leading-none" style={{ fontSize: 38 }}>
-          Hoy <Scribble width={52} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
+        <div className="font-display leading-none" style={{ fontSize: 44 }}>
+          Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
         </div>
-        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 16, marginTop: 2 }}>
-          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0} días <HandIcon kind="fire" size={16} color="var(--coral)" />
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 18, marginTop: 2 }}>
+          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0} días <HandIcon kind="fire" size={18} color="var(--coral)" />
         </div>
       </div>
 
       {/* Summary band */}
       <div className="flex items-center gap-[14px]" style={{ padding: '6px 18px 10px' }}>
-        <Ring size={86} value={dayPct} label={`${Math.round(dayPct * 100)}%`} sublabel="del día" color="var(--coral)" stroke={7} />
+        <Ring size={86} value={dayPct} label={`${Math.round(dayPct * 100)}%`} labelSize={26} sublabel="del día" color="var(--coral)" stroke={7} />
         <div className="flex-1 flex flex-col gap-[4px]">
-          <span className="font-display leading-none" style={{ fontSize: 24 }}>{doneHabits} / {totalHabits} hábitos</span>
-          <span className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15 }}>
+          <span className="font-display leading-none" style={{ fontSize: 28 }}>{doneHabits} / {totalHabits} hábitos</span>
+          <span className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 17 }}>
             {totalHabits - doneHabits > 0
               ? `quedan ${totalHabits - doneHabits} por completar`
               : <><HandIcon kind="check" size={15} color="var(--coral)" /> ¡Todo listo por hoy!</>}
@@ -122,10 +122,10 @@ export function Home() {
                 className={`flex items-center gap-[10px] cursor-pointer ${done ? 'opacity-55' : 'opacity-100'}`}
                 onClick={() => navigate(`/habits/${h.id}`)}
               >
-                <IconTile kind={h.icon} size={40} />
+                <IconTile kind={h.icon} size={44} />
                 <div className="flex-1 min-w-0">
-                  <div className={`font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap${done ? ' line-through' : ''}`} style={{ fontSize: 22 }}>{h.name}</div>
-                  <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 2 }}>
+                  <div className={`font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap${done ? ' line-through' : ''}`} style={{ fontSize: 26 }}>{h.name}</div>
+                  <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
                     {habitSubtitle(h, sum)}
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export function Home() {
                   className="cursor-pointer"
                 >
                   <Ring
-                    size={46}
+                    size={52}
                     value={h.type === 'yn' ? (sum >= 1 ? 1 : 0) : sum / h.goal}
                     stroke={4}
                     color={done ? 'var(--ink-soft)' : 'var(--coral)'}
