@@ -466,7 +466,7 @@ export function QuickAction() {
       <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)}>
         <div className="font-display" style={{ fontSize: 24, marginBottom: 4 }}>{habit.name}</div>
         <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 8 }}>opciones del hábito</div>
-        <ActionMenuRow icon="clock" label="Ver historial completo" onTap={() => { setMoreOpen(false); navigate(`/history`); }} />
+        <ActionMenuRow icon="clock" label="Ver historial completo" onTap={() => { setMoreOpen(false); navigate(`/habits/${habit.id}/history`); }} />
         <ActionMenuRow icon="leaf" label="Archivar hábito" onTap={() => { setMoreOpen(false); void archiveHabit(); }} />
         <ActionMenuRow icon="plus" label="Eliminar permanente" onTap={() => { setMoreOpen(false); void deleteHabit(); }} danger />
       </BottomSheet>
