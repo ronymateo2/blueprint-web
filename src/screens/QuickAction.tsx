@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
 import { useEntries } from '../hooks/useEntries';
 import { useUndo } from '../hooks/useUndo';
 import { api, type Entry } from '../api/client';
@@ -8,6 +9,7 @@ import { HandIcon } from '../components/HandIcon';
 import { IconTile } from '../components/IconTile';
 import { UndoToast } from '../components/UndoToast';
 import { BottomSheet } from '../components/BottomSheet';
+import { Btn } from '../components/Btn';
 import { useHabits } from '../hooks/useHabits';
 
 function todayLocal(): string {
@@ -46,7 +48,6 @@ interface StepperProps {
 
 function Stepper({ value, onChange, min = 0, max = 999, big = false }: StepperProps) {
   const btnSize = big ? 48 : 38;
-  const btnFontSize = big ? 28 : 24;
   const numFontSize = big ? 42 : 30;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -57,9 +58,9 @@ function Stepper({ value, onChange, min = 0, max = 999, big = false }: StepperPr
           width: btnSize, height: btnSize, borderRadius: 999,
           border: '1.8px solid var(--ink)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: btnFontSize, lineHeight: 1, color: 'var(--ink)',
+          color: 'var(--ink)',
         }}
-      >−</button>
+      ><Minus size={big ? 20 : 18} /></button>
       <span className="font-display text-center" style={{ fontSize: numFontSize, minWidth: big ? 64 : 44, lineHeight: 1 }}>
         {value}
       </span>
@@ -70,9 +71,9 @@ function Stepper({ value, onChange, min = 0, max = 999, big = false }: StepperPr
           width: btnSize, height: btnSize, borderRadius: 999,
           border: '1.8px solid var(--ink)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: btnFontSize, lineHeight: 1, color: 'var(--ink)',
+          color: 'var(--ink)',
         }}
-      >+</button>
+      ><Plus size={big ? 20 : 18} /></button>
     </div>
   );
 }
@@ -101,34 +102,11 @@ function EditEntrySheet({ habit, entry, amount, onAmountChange, onSave, onDelete
         </div>
       )}
       <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-        <button
-          onClick={() => void onDelete()}
-          className="font-hand cursor-pointer flex-1"
-          style={{
-            padding: '14px 0', textAlign: 'center', borderRadius: 999,
-            border: '1.8px solid var(--coral)', color: 'var(--coral)',
-            fontSize: 17, background: 'transparent',
-          }}
-        >Borrar</button>
+        <Btn variant="danger" className="flex-1" style={{ padding: '14px 0' }} onClick={() => void onDelete()}>Borrar</Btn>
         {habit.type !== 'yn' ? (
-          <button
-            onClick={() => void onSave()}
-            className="font-hand cursor-pointer"
-            style={{
-              flex: 1.5, padding: '14px 0', textAlign: 'center', borderRadius: 999,
-              border: '1.8px solid var(--ink)', background: 'var(--ink)',
-              color: 'var(--paper)', fontSize: 17,
-            }}
-          >Guardar</button>
+          <Btn variant="ink" style={{ flex: 1.5, padding: '14px 0' }} onClick={() => void onSave()}>Guardar</Btn>
         ) : (
-          <button
-            onClick={onClose}
-            className="font-hand cursor-pointer"
-            style={{
-              flex: 1.5, padding: '14px 0', textAlign: 'center', borderRadius: 999,
-              border: '1.8px solid var(--ink)', fontSize: 17, background: 'transparent',
-            }}
-          >Cerrar</button>
+          <Btn style={{ flex: 1.5, padding: '14px 0' }} onClick={onClose}>Cerrar</Btn>
         )}
       </div>
     </div>
@@ -167,19 +145,9 @@ function QuickLogBody({ habit, todaySum: _todaySum, onLog, onClose }: QuickLogBo
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {chips.map((v) => (
-          <button
-            key={v}
-            onClick={() => setAmount(v)}
-            className="font-hand cursor-pointer"
-            style={{
-              padding: '6px 14px', border: '1.6px solid var(--ink)', borderRadius: 999,
-              fontSize: 14,
-              background: v === amount ? 'var(--coral-soft)' : 'transparent',
-              color: 'var(--ink)',
-            }}
-          >
+          <Btn key={v} variant="chip" size="sm" active={v === amount} onClick={() => setAmount(v)}>
             {v}{habit.type === 'time' ? '′' : ''}
-          </button>
+          </Btn>
         ))}
       </div>
 
@@ -188,26 +156,10 @@ function QuickLogBody({ habit, todaySum: _todaySum, onLog, onClose }: QuickLogBo
       </div>
 
       <div style={{ display: 'flex', gap: 10, paddingTop: 10 }}>
-        <button
-          onClick={onClose}
-          className="font-hand cursor-pointer flex-1"
-          style={{
-            padding: 12, textAlign: 'center', borderRadius: 999,
-            border: '1.8px solid var(--ink)', fontSize: 16,
-            background: 'transparent',
-          }}
-        >Cancelar</button>
-        <button
-          onClick={() => void onLog(amount)}
-          className="font-hand cursor-pointer"
-          style={{
-            flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
-            border: '1.8px solid var(--coral)', background: 'var(--coral)',
-            color: 'var(--paper)', fontSize: 16,
-          }}
-        >
+        <Btn className="flex-1" style={{ padding: 12, fontSize: 16 }} onClick={onClose}>Cancelar</Btn>
+        <Btn variant="primary" style={{ flex: 1.5, padding: 12, fontSize: 16 }} onClick={() => void onLog(amount)}>
           Registrar +{habit.points * amount} pts
-        </button>
+        </Btn>
       </div>
     </div>
   );
@@ -308,43 +260,10 @@ export function QuickAction() {
     <div className="screen">
       {/* Nav */}
       <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button
-          onClick={() => navigate(-1)}
-          className="font-hand cursor-pointer"
-          style={{
-            height: 36, padding: '0 14px', borderRadius: 999,
-            border: '1.8px solid var(--ink)',
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 16, background: 'transparent', color: 'var(--ink)',
-          }}
-        >
-          ← Hoy
-        </button>
+        <Btn onClick={() => navigate(-1)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Hoy</Btn>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => navigate(`/habits/${habit.id}/edit`)}
-            className="font-hand cursor-pointer"
-            style={{
-              height: 36, padding: '0 14px', borderRadius: 999,
-              border: '1.8px solid var(--ink)',
-              display: 'inline-flex', alignItems: 'center',
-              fontSize: 16, background: 'transparent', color: 'var(--ink)',
-            }}
-          >
-            editar
-          </button>
-          <button
-            onClick={() => setMoreOpen(true)}
-            className="font-hand cursor-pointer"
-            style={{
-              height: 36, padding: '0 14px', borderRadius: 999,
-              border: '1.8px solid var(--ink)',
-              display: 'inline-flex', alignItems: 'center',
-              fontSize: 16, background: 'transparent', color: 'var(--ink)',
-            }}
-          >
-            ···
-          </button>
+          <Btn onClick={() => navigate(`/habits/${habit.id}/edit`)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}>editar</Btn>
+          <Btn onClick={() => setMoreOpen(true)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}>···</Btn>
         </div>
       </div>
 
@@ -400,14 +319,10 @@ export function QuickAction() {
 
         {/* CTA */}
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <button
+          <Btn
+            variant="primary"
             onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
-            className="font-hand cursor-pointer flex items-center gap-[8px]"
-            style={{
-              padding: '14px 36px', fontSize: 20, borderRadius: 999,
-              border: '1.8px solid var(--coral)', background: 'var(--coral)',
-              color: 'var(--paper)',
-            }}
+            style={{ padding: '14px 36px', fontSize: 20 }}
           >
             {habit.type !== 'time' && <HandIcon kind="plus" size={20} color="var(--paper)" />}
             {habit.type === 'yn'
@@ -415,19 +330,11 @@ export function QuickAction() {
               : habit.type === 'time'
               ? `Registrar +${habit.goal} min`
               : 'Registrar uno'}
-          </button>
+          </Btn>
           {habit.type !== 'yn' && (
-            <button
-              onClick={() => setLogOpen(true)}
-              className="font-hand cursor-pointer"
-              style={{
-                padding: '10px 28px', fontSize: 16, borderRadius: 999,
-                border: '1.8px solid var(--ink)', background: 'transparent',
-                color: 'var(--ink)',
-              }}
-            >
+            <Btn onClick={() => setLogOpen(true)} style={{ padding: '10px 28px', fontSize: 16 }}>
               registrar otra cantidad
-            </button>
+            </Btn>
           )}
         </div>
 

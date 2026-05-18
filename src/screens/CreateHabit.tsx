@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Plus } from '@phosphor-icons/react';
 import { api } from '../api/client';
 import { HabitForm, type HabitFormValues } from './HabitForm';
 
@@ -17,7 +18,7 @@ export function CreateHabit() {
   return (
     <HabitForm
       navTitle="Nuevo hábito"
-      saveLabel="+ Crear hábito"
+      saveLabel={<><Plus size={14} /> Crear hábito</>}
       autoFocusName
       onSubmit={save}
       onCancel={() => navigate(-1)}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fire, Confetti } from '@phosphor-icons/react';
+import { Fire, Confetti, Plus, Check } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -11,6 +11,7 @@ import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
 import { UndoToast } from '../components/UndoToast';
 import { Scribble } from '../components/Scribble';
+import { Btn } from '../components/Btn';
 
 function formatDate(): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date());
@@ -130,13 +131,7 @@ export function Home() {
         <span className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'capitalize' }}>
           {formatDate()}
         </span>
-        <button
-          onClick={() => navigate('/habits/new')}
-          className="bg-transparent border-none cursor-pointer font-hand text-ink"
-          style={{ fontSize: 16, padding: '4px 12px', border: '1.8px solid var(--ink)', borderRadius: 999 }}
-        >
-          + nuevo
-        </button>
+        <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px' }}><Plus size={14} /> nuevo</Btn>
       </div>
 
       {/* Title */}
@@ -185,17 +180,9 @@ export function Home() {
           <SketchBox dashed padding={20} style={{ textAlign: 'center', marginTop: 20 }}>
             <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>Sin hábitos todavía</div>
             <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: 12 }}>Empieza creando uno nuevo</div>
-            <button
-              onClick={() => navigate('/habits/new')}
-              className="font-hand cursor-pointer"
-              style={{
-                padding: '12px 24px', borderRadius: 999,
-                border: '1.8px solid var(--coral)', background: 'var(--coral)',
-                color: 'var(--paper)', fontSize: 16,
-              }}
-            >
-              + Crear hábito
-            </button>
+            <Btn variant="primary" onClick={() => navigate('/habits/new')} style={{ padding: '12px 24px', fontSize: 16 }}>
+              <Plus size={14} /> Crear hábito
+            </Btn>
           </SketchBox>
         ) : (
           activeHabits.map((h) => {
@@ -203,7 +190,7 @@ export function Home() {
             const done = sum >= h.goal;
             const state = logStates[h.id];
             const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
-            const valueLabel = h.type === 'yn' ? (sum >= 1 ? '✓' : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
+            const valueLabel = h.type === 'yn' ? (sum >= 1 ? <Check size={28} weight="bold" /> : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
 
             return (
               <div
@@ -256,7 +243,7 @@ export function Home() {
                         minWidth: 36,
                       }}
                     >
-                      {state === 'logging' ? '…' : state === 'done' ? '✓' : valueLabel}
+                      {state === 'logging' ? '…' : state === 'done' ? <Check size={28} weight="bold" /> : valueLabel}
                     </div>
                     {h.type !== 'yn' && (
                       <div style={{

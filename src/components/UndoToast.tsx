@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { SketchButton } from './SketchButton';
+import { ArrowCounterClockwise } from '@phosphor-icons/react';
+import { Btn } from './Btn';
 
 interface UndoToastProps {
   text: string;
@@ -37,7 +38,7 @@ export function UndoToast({ text, onUndo, onDismiss, durationMs = 4000 }: UndoTo
           cierra en {remaining}s
         </span>
       </div>
-      <SketchButton small accent onClick={onUndo}>↶ Deshacer</SketchButton>
+      <Btn variant="danger" size="xs" onClick={onUndo}><ArrowCounterClockwise size={14} /> Deshacer</Btn>
     </div>
   );
 }

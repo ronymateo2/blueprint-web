@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { api, type Habit } from '../api/client';
 import { SketchBox } from '../components/SketchBox';
-import { SketchButton } from '../components/SketchButton';
+import { Btn } from '../components/Btn';
 import { IconTile } from '../components/IconTile';
 import { Scribble } from '../components/Scribble';
 
@@ -43,16 +44,7 @@ export function Archive() {
       {/* Header */}
       <div style={{ padding: '14px 18px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button
-            onClick={() => navigate(-1)}
-            className="font-hand cursor-pointer"
-            style={{
-              height: 36, padding: '0 14px', borderRadius: 999,
-              border: '1.8px solid var(--ink)',
-              display: 'inline-flex', alignItems: 'center',
-              fontSize: 16, background: 'transparent', color: 'var(--ink)',
-            }}
-          >← Yo</button>
+          <Btn onClick={() => navigate(-1)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Yo</Btn>
         </div>
         <div className="font-display leading-none flex items-center" style={{ fontSize: 42, marginTop: 4 }}>
           Archivo <Scribble width={56} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 6, marginTop: -2 }} />
@@ -98,8 +90,8 @@ export function Archive() {
                     archivado {age === 0 ? 'hoy' : `hace ${age}d`}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                    <SketchButton small accent onClick={() => void restore(h)}>↩ Restaurar</SketchButton>
-                    <SketchButton small onClick={() => void deleteHabit(h)}>borrar</SketchButton>
+                    <Btn variant="danger" size="xs" onClick={() => void restore(h)}><ArrowCounterClockwise size={14} /> Restaurar</Btn>
+                    <Btn size="xs" onClick={() => void deleteHabit(h)}>borrar</Btn>
                   </div>
                 </div>
               </SketchBox>

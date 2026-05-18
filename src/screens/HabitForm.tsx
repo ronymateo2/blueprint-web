@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
 import { HandIcon } from '../components/HandIcon';
+import { Btn } from '../components/Btn';
 
 export const ICONS = [
   'dish','water','run','pill','book','mug','sun','moon','fire','star',
@@ -41,9 +43,9 @@ function Stepper({ value, onChange, min = 0, max = 999, step = 1 }: StepperProps
           width: 48, height: 48, borderRadius: 999,
           border: '1.8px solid var(--ink)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, lineHeight: 1, color: 'var(--ink)',
+          color: 'var(--ink)',
         }}
-      >−</button>
+      ><Minus size={20} /></button>
       <span className="font-display text-center" style={{ fontSize: 42, minWidth: 64, lineHeight: 1 }}>{value}</span>
       <button
         onClick={() => onChange(Math.min(max, value + step))}
@@ -52,16 +54,16 @@ function Stepper({ value, onChange, min = 0, max = 999, step = 1 }: StepperProps
           width: 48, height: 48, borderRadius: 999,
           border: '1.8px solid var(--ink)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, lineHeight: 1, color: 'var(--ink)',
+          color: 'var(--ink)',
         }}
-      >+</button>
+      ><Plus size={20} /></button>
     </div>
   );
 }
 
 interface HabitFormProps {
   navTitle: string;
-  saveLabel: string;
+  saveLabel: ReactNode;
   defaultValues?: HabitFormValues;
   onSubmit: (values: HabitFormValues) => Promise<void>;
   onCancel: () => void;
@@ -107,28 +109,14 @@ export function HabitForm({
     <div className="screen">
       {/* Nav */}
       <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button
-          onClick={onCancel}
-          className="font-hand cursor-pointer"
-          style={{
-            height: 36, padding: '0 14px', borderRadius: 999,
-            border: '1.8px solid var(--ink)',
-            display: 'inline-flex', alignItems: 'center',
-            fontSize: 16, background: 'transparent', color: 'var(--ink)',
-          }}
-        >← cancelar</button>
+        <Btn onClick={onCancel} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> cancelar</Btn>
         <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{navTitle}</span>
-        <button
+        <Btn
+          variant="danger"
+          disabled={!isValid}
           onClick={isValid ? () => void handleSubmit() : undefined}
-          className="font-hand cursor-pointer"
-          style={{
-            height: 36, padding: '0 14px', borderRadius: 999,
-            border: `1.8px solid ${isValid ? 'var(--coral)' : 'var(--ink-soft)'}`,
-            display: 'inline-flex', alignItems: 'center',
-            fontSize: 16, background: 'transparent',
-            color: isValid ? 'var(--coral)' : 'var(--ink-soft)',
-          }}
-        >{saveLabel}</button>
+          style={{ height: 36, padding: '0 14px', fontSize: 16 }}
+        >{saveLabel}</Btn>
       </div>
 
       <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 18px 24px' }}>
@@ -156,25 +144,16 @@ export function HabitForm({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
           <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Tipo</div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {TYPES.map((t) => {
-              const on = t.id === type;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setType(t.id)}
-                  className="font-hand cursor-pointer flex-1"
-                  style={{
-                    textAlign: 'center', padding: '10px 0',
-                    border: '1.8px solid var(--ink)', borderRadius: 999,
-                    background: on ? 'var(--ink)' : 'transparent',
-                    color: on ? 'var(--paper)' : 'var(--ink)',
-                    fontSize: 16,
-                    transition: 'background 180ms',
-                    WebkitTapHighlightColor: 'transparent',
-                  }}
-                >{t.label}</button>
-              );
-            })}
+            {TYPES.map((t) => (
+              <Btn
+                key={t.id}
+                variant="segment"
+                active={t.id === type}
+                onClick={() => setType(t.id)}
+                className="flex-1"
+                style={{ padding: '10px 0', fontSize: 16 }}
+              >{t.label}</Btn>
+            ))}
           </div>
           <div className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
             {TYPES.find(t => t.id === type)?.hint}
@@ -191,17 +170,7 @@ export function HabitForm({
               <Stepper value={goal} onChange={setGoal} min={1} max={type === 'time' ? 240 : 50} step={type === 'time' ? 5 : 1} />
               <div style={{ display: 'flex', gap: 6 }}>
                 {goalChips.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setGoal(v)}
-                    className="font-hand cursor-pointer"
-                    style={{
-                      padding: '6px 10px', borderRadius: 999,
-                      border: '1.6px solid var(--ink)',
-                      background: v === goal ? 'var(--coral-soft)' : 'transparent',
-                      fontSize: 13, color: 'var(--ink)',
-                    }}
-                  >{v}</button>
+                  <Btn key={v} variant="chip" size="xs" active={v === goal} onClick={() => setGoal(v)}>{v}</Btn>
                 ))}
               </div>
             </div>
@@ -222,9 +191,9 @@ export function HabitForm({
                   width: 38, height: 38, borderRadius: 999,
                   border: '1.8px solid var(--ink)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, lineHeight: 1, color: 'var(--ink)',
+                  color: 'var(--ink)',
                 }}
-              >−</button>
+              ><Minus size={18} /></button>
               <span className="font-display text-center" style={{ fontSize: 30, minWidth: 44, lineHeight: 1 }}>{pts}</span>
               <button
                 onClick={() => setPts(Math.min(50, pts + 1))}
@@ -233,23 +202,13 @@ export function HabitForm({
                   width: 38, height: 38, borderRadius: 999,
                   border: '1.8px solid var(--ink)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 24, lineHeight: 1, color: 'var(--ink)',
+                  color: 'var(--ink)',
                 }}
-              >+</button>
+              ><Plus size={18} /></button>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               {ptsChips.map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setPts(v)}
-                  className="font-hand cursor-pointer"
-                  style={{
-                    padding: '6px 10px', borderRadius: 999,
-                    border: '1.6px solid var(--ink)',
-                    background: v === pts ? 'var(--coral-soft)' : 'transparent',
-                    fontSize: 13, color: 'var(--ink)',
-                  }}
-                >{v}</button>
+                <Btn key={v} variant="chip" size="xs" active={v === pts} onClick={() => setPts(v)}>{v}</Btn>
               ))}
             </div>
           </div>
@@ -283,23 +242,15 @@ export function HabitForm({
 
         {bottomSlot}
 
-        {/* Big save button */}
-        <button
+        <Btn
+          variant="primary"
+          size="lg"
+          fullWidth
+          disabled={!isValid}
+          loading={saving}
           onClick={isValid ? () => void handleSubmit() : undefined}
-          className="font-hand cursor-pointer"
-          style={{
-            padding: 14, textAlign: 'center', borderRadius: 999,
-            border: `1.8px solid ${isValid ? 'var(--coral)' : 'var(--ink-soft)'}`,
-            background: isValid ? 'var(--coral)' : 'rgba(217,119,87,0.35)',
-            color: 'var(--paper)', fontSize: 18,
-            transition: 'background 200ms',
-            width: '100%',
-            marginTop: 4,
-          }}
-          disabled={saving}
-        >
-          {saving ? '…' : saveLabel}
-        </button>
+          style={{ marginTop: 4 }}
+        >{saveLabel}</Btn>
 
       </div>
     </div>

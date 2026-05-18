@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon } from '@phosphor-icons/react';
+import { FireIcon, CaretRight } from '@phosphor-icons/react';
 import { useAuth } from '../hooks/useAuth';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
@@ -8,6 +8,7 @@ import { api, type Habit } from '../api/client';
 import { SketchBox } from '../components/SketchBox';
 import { HandIcon } from '../components/HandIcon';
 import { Scribble } from '../components/Scribble';
+import { Btn } from '../components/Btn';
 
 const TIMEZONES = [
   'UTC', 'America/Santo_Domingo', 'America/New_York', 'America/Chicago',
@@ -39,7 +40,7 @@ function SettingsRow({
       <HandIcon kind={icon} size={18} color={danger ? 'var(--coral)' : 'var(--ink)'} />
       <span className="font-hand flex-1" style={{ fontSize: 15, color: danger ? 'var(--coral)' : 'var(--ink)' }}>{label}</span>
       {detail && <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{detail}</span>}
-      {onTap && <span className="font-hand text-ink-soft" style={{ fontSize: 16, marginLeft: 4 }}>›</span>}
+      {onTap && <CaretRight size={16} className="text-ink-soft" style={{ marginLeft: 4, flexShrink: 0 }} />}
     </div>
   );
 }
@@ -183,28 +184,8 @@ export function Me() {
                 {TIMEZONES.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button
-                  onClick={() => void saveTz()}
-                  disabled={saving}
-                  className="font-hand cursor-pointer"
-                  style={{
-                    padding: '8px 18px', borderRadius: 999,
-                    border: '1.8px solid var(--coral)', background: 'var(--coral)',
-                    color: 'var(--paper)', fontSize: 14,
-                  }}
-                >
-                  {saving ? '…' : 'Guardar'}
-                </button>
-                <button
-                  onClick={() => setEditingTz(false)}
-                  className="font-hand cursor-pointer"
-                  style={{
-                    padding: '8px 18px', borderRadius: 999,
-                    border: '1.8px solid var(--ink)', fontSize: 14, background: 'transparent',
-                  }}
-                >
-                  Cancelar
-                </button>
+                <Btn variant="primary" size="sm" loading={saving} onClick={() => void saveTz()}>Guardar</Btn>
+                <Btn size="sm" onClick={() => setEditingTz(false)}>Cancelar</Btn>
               </div>
             </div>
           ) : (

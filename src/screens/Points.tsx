@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from '@phosphor-icons/react';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { SketchBox } from '../components/SketchBox';
 import { HandIcon } from '../components/HandIcon';
 import { Scribble } from '../components/Scribble';
+import { Btn } from '../components/Btn';
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -167,16 +169,7 @@ export function Points() {
       {/* Header */}
       <div style={{ padding: '14px 18px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button
-            onClick={() => navigate('/')}
-            className="font-hand cursor-pointer"
-            style={{
-              height: 36, padding: '0 14px', borderRadius: 999,
-              border: '1.8px solid var(--ink)',
-              display: 'inline-flex', alignItems: 'center',
-              fontSize: 16, background: 'transparent', color: 'var(--ink)',
-            }}
-          >← Hoy</button>
+          <Btn onClick={() => navigate('/')} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Hoy</Btn>
         </div>
         <div className="font-display leading-none flex items-center" style={{ fontSize: 42, marginTop: 4 }}>
           Puntos <Scribble width={64} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 6, marginTop: -2 }} />
@@ -243,25 +236,16 @@ export function Points() {
 
         {/* Period tabs */}
         <div style={{ display: 'flex', gap: 6 }}>
-          {PERIOD_TABS.map((t) => {
-            const active = t.id === period;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setPeriod(t.id)}
-                className="font-hand cursor-pointer flex-1"
-                style={{
-                  padding: '10px 0', textAlign: 'center',
-                  border: '1.8px solid var(--ink)', borderRadius: 999,
-                  background: active ? 'var(--ink)' : 'transparent',
-                  color: active ? 'var(--paper)' : 'var(--ink)',
-                  fontSize: 16,
-                  transition: 'background 180ms',
-                  WebkitTapHighlightColor: 'transparent',
-                }}
-              >{t.label}</button>
-            );
-          })}
+          {PERIOD_TABS.map((t) => (
+            <Btn
+              key={t.id}
+              variant="segment"
+              active={t.id === period}
+              onClick={() => setPeriod(t.id)}
+              className="flex-1"
+              style={{ padding: '10px 0', fontSize: 16 }}
+            >{t.label}</Btn>
+          ))}
         </div>
 
         {/* Bar chart */}

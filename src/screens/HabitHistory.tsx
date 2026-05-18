@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { Scribble } from '../components/Scribble';
+import { Btn } from '../components/Btn';
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -85,19 +87,7 @@ export function HabitHistory() {
     <div className="screen">
       {/* Header */}
       <div style={{ padding: '14px 14px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button
-          onClick={() => navigate(-1)}
-          className="font-hand cursor-pointer"
-          style={{
-            height: 36, padding: '0 14px', borderRadius: 999,
-            border: '1.8px solid var(--ink)',
-            display: 'inline-flex', alignItems: 'center', gap: 4,
-            fontSize: 16, background: 'transparent', color: 'var(--ink)',
-            WebkitTapHighlightColor: 'transparent',
-          }}
-        >
-          ← Detalle
-        </button>
+        <Btn onClick={() => navigate(-1)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Detalle</Btn>
         <span
           className="font-hand text-ink-soft overflow-hidden text-ellipsis whitespace-nowrap"
           style={{ fontSize: 15, maxWidth: 150 }}
