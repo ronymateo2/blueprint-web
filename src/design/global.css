@@ -33,7 +33,7 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  min-height: 0;
   overflow: hidden;
   background: var(--paper);
   position: relative;
@@ -60,6 +60,21 @@ body {
 }
 
 @keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes screenEnterRight {
+  from { opacity: 0; transform: translateX(48px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes screenEnterLeft {
+  from { opacity: 0; transform: translateX(-48px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes screenFade {
   from { opacity: 0; }
   to   { opacity: 1; }
 }

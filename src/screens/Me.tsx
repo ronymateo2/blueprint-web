@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import { api } from '../api/client';
 import { SketchBox } from '../components/SketchBox';
 import { SketchButton } from '../components/SketchButton';
-import { TabBar } from '../components/TabBar';
 
 const TIMEZONES = [
   'UTC', 'America/Santo_Domingo', 'America/New_York', 'America/Chicago',
@@ -90,7 +89,6 @@ export function Me() {
         </SketchButton>
       </div>
 
-      <TabBar />
     </div>
   );
 }

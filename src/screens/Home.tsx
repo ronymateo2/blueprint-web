@@ -8,7 +8,6 @@ import { Ring } from '../components/Ring';
 import { HandIcon } from '../components/HandIcon';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
-import { TabBar } from '../components/TabBar';
 import { UndoToast } from '../components/UndoToast';
 import { Scribble } from '../components/Scribble';
 
@@ -169,7 +168,6 @@ export function Home() {
         <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />
       )}
 
-      <TabBar />
     </div>
   );
 }

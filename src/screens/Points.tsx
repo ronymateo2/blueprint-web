@@ -4,7 +4,6 @@ import { BarChart } from '../components/BarChart';
 import { Heatmap } from '../components/Heatmap';
 import { SketchBox } from '../components/SketchBox';
 import { HandIcon } from '../components/HandIcon';
-import { TabBar } from '../components/TabBar';
 
 const TABS = ['Día', 'Semana', 'Mes', 'Año'];
 
@@ -117,7 +116,6 @@ export function Points() {
         <div style={{ height: 16 }} />
       </div>
 
-      <TabBar />
     </div>
   );
 }

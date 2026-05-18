@@ -6,7 +6,6 @@ import { api } from '../api/client';
 import { Ring } from '../components/Ring';
 import { SketchButton } from '../components/SketchButton';
 import { UndoToast } from '../components/UndoToast';
-import { TabBar } from '../components/TabBar';
 import { useHabits } from '../hooks/useHabits';
 
 function todayLocal(): string {
@@ -159,7 +158,6 @@ export function QuickAction() {
       </div>
 
       {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
-      <TabBar />
     </div>
   );
 }

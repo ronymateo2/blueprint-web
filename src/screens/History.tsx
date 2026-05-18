@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { HandIcon } from '../components/HandIcon';
-import { TabBar } from '../components/TabBar';
 
 const TABS = ['Día', 'Semana', 'Mes', 'Año'];
 
@@ -117,7 +116,6 @@ export function History() {
         <div style={{ height: 16 }} />
       </div>
 
-      <TabBar />
     </div>
   );
 }

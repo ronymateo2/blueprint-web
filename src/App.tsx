@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuth } from './hooks/useAuth';
+import { NavProvider, useNavDirection, type NavDirection } from './context/NavContext';
+import { TabBar } from './components/TabBar';
 import { Login } from './screens/Login';
 import { AuthCallback } from './screens/AuthCallback';
 import { Home } from './screens/Home';
@@ -21,21 +24,65 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const ANIM: Record<NavDirection, string> = {
+  right: 'screenEnterRight',
+  left:  'screenEnterLeft',
+  up:    'screenFade',
+};
+
+const TAB_ROUTES = new Set(['/', '/history', '/points', '/me']);
+
+function AppLayout() {
+  const location = useLocation();
+  const { getDirection, setDirection } = useNavDirection();
+
+  useEffect(() => {
+    const t = setTimeout(() => setDirection('up'), 350);
+    return () => clearTimeout(t);
+  }, [location.key, setDirection]);
+
+  const anim = ANIM[getDirection()] ?? 'screenFade';
+  // show tabbar on main tabs + quickaction (but not on sub-screens or login)
+  const showTabBar = TAB_ROUTES.has(location.pathname) ||
+    /^\/habits\/[^/]+$/.test(location.pathname);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
+      <div
+        key={location.key}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          animation: `${anim} 0.28s cubic-bezier(0.22, 1, 0.36, 1) both`,
+        }}
+      >
+        <Routes location={location}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/habits/new" element={<ProtectedRoute><CreateHabit /></ProtectedRoute>} />
+          <Route path="/habits/:id" element={<ProtectedRoute><QuickAction /></ProtectedRoute>} />
+          <Route path="/habits/:id/edit" element={<ProtectedRoute><EditHabit /></ProtectedRoute>} />
+          <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/me" element={<ProtectedRoute><Me /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+      {showTabBar && <TabBar />}
+    </div>
+  );
+}
+
 export function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/habits/new" element={<ProtectedRoute><CreateHabit /></ProtectedRoute>} />
-        <Route path="/habits/:id" element={<ProtectedRoute><QuickAction /></ProtectedRoute>} />
-        <Route path="/habits/:id/edit" element={<ProtectedRoute><EditHabit /></ProtectedRoute>} />
-        <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/me" element={<ProtectedRoute><Me /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <NavProvider>
+        <AppLayout />
+      </NavProvider>
     </BrowserRouter>
   );
 }
