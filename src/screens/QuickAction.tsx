@@ -365,7 +365,7 @@ export function QuickAction() {
 
         {/* Big ring */}
         <div
-          onClick={() => void doLog(1)}
+          onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
           style={{ margin: '22px auto 0', position: 'relative', cursor: 'pointer', width: 230, height: 230 }}
         >
           <Ring
@@ -401,7 +401,7 @@ export function QuickAction() {
         {/* CTA */}
         <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <button
-            onClick={() => void doLog(1)}
+            onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
             className="font-hand cursor-pointer flex items-center gap-[8px]"
             style={{
               padding: '14px 36px', fontSize: 20, borderRadius: 999,
@@ -409,18 +409,22 @@ export function QuickAction() {
               color: 'var(--paper)',
             }}
           >
-            <HandIcon kind="plus" size={20} color="var(--paper)" />
+            {habit.type !== 'time' && <HandIcon kind="plus" size={20} color="var(--paper)" />}
             {habit.type === 'yn'
               ? (done ? 'Ya marcado' : 'Marcar como hecho')
               : habit.type === 'time'
-              ? 'Registrar +1 min'
+              ? `Registrar +${habit.goal} min`
               : 'Registrar uno'}
           </button>
           {habit.type !== 'yn' && (
             <button
               onClick={() => setLogOpen(true)}
-              className="font-hand bg-transparent border-none cursor-pointer text-ink-soft"
-              style={{ fontSize: 15, borderBottom: '1px dashed var(--ink-soft)' }}
+              className="font-hand cursor-pointer"
+              style={{
+                padding: '10px 28px', fontSize: 16, borderRadius: 999,
+                border: '1.8px solid var(--ink)', background: 'transparent',
+                color: 'var(--ink)',
+              }}
             >
               registrar otra cantidad
             </button>

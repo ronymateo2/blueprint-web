@@ -20,6 +20,9 @@ import {
   PhoneIcon,
   PlusIcon,
   CheckIcon,
+  PersonSimpleWalkIcon,
+  WashingMachineIcon,
+  ShowerIcon
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -45,6 +48,9 @@ const ICONS: Record<string, Icon> = {
   phone:  PhoneIcon,
   plus:   PlusIcon,
   check:  CheckIcon,
+  walk:   PersonSimpleWalkIcon,
+  wash:   WashingMachineIcon,
+  shower: ShowerIcon,
 };
 
 interface HandIconProps {
