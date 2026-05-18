@@ -142,7 +142,7 @@ All font sizes are **inline `style={{ fontSize: N }}`** — not Tailwind text-* 
 | `var(--shadow-sketch)` | `shadow-sketch` |
 | `var(--shadow-float)` | `shadow-float` |
 
-See [`src/react-app/design/DESIGN.md`](src/react-app/design/DESIGN.md) for full design system reference.
+See [`DESIGN.md`](../../DESIGN.md) for full design system reference.
 See [`src/react-app/components/COMPONENTS.md`](src/react-app/components/COMPONENTS.md) for component API reference.
 
 ## Data Fetching Patterns

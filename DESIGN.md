@@ -46,17 +46,27 @@ Fonts loaded from Google Fonts in `index.html`.
 | `--font-hand` | Patrick Hand | `font-hand` | Body text, labels, buttons, metadata |
 | `--font-mono` | JetBrains Mono | `font-mono` | Timestamps, debug, data values |
 
-### Type Scale
+### Type Scale (Apple Health baseline)
 
-| Role | Font | Size | Weight |
-|------|------|------|--------|
-| Screen title | `--font-display` | 34px | 600 |
-| Section title | `--font-display` | 22–28px | 500 |
-| Habit name (list) | `--font-display` | 16px | 500 |
-| Ring label (big) | `--font-display` | size × 0.22 | auto |
-| Body / labels | `--font-hand` | 13–15px | — |
-| Hint / secondary | `--font-hand` | 11–12px | — |
-| Tab bar labels | `--font-hand` | 11px | — |
+All font sizes are inline `style={{ fontSize: N }}` — no Tailwind `text-*` utilities. Minimum: **12px**.
+
+| px | Role | Examples |
+|----|------|---------|
+| 38 | Screen hero | "Hoy" title |
+| 34 | Screen title | "Puntos", "Histórico", "Yo" |
+| 28 | Card hero | XP total |
+| 24 | Section value | Habit count "X / Y hábitos" |
+| 22 | Item title | Habit name in list, stat pill values |
+| 17 | Body / callout | Toast text, button (normal), timezone value |
+| 16 | Subheadline | Points subtitle, pts·racha row, empty state |
+| 15 | Body secondary | Date label, "quedan X", entry rows, period tabs |
+| 14 | Caption primary | Habit subtitle, XP hint, heatmap headers |
+| 13 | Caption secondary | Stat labels, "Esta semana", toast countdown, tz label |
+| 12 | Micro label | Bar chart days, heatmap legend, tab bar labels |
+
+- `font-display` for numbers and titles. `font-hand` for body/label text.
+- `SketchButton`: `small=true` → 14px, normal → 17px.
+- Tab bar labels: 12px (must fit under icon in 60px column).
 
 ---
 
@@ -107,6 +117,13 @@ The app is a mobile-first PWA constrained to **430px max-width**.
 
 No spacing tokens — use absolute values in multiples of 4px or 6px.
 Common values: `4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 32`.
+
+- Horizontal padding: `18px` for headers, `14px` for content
+- Gap between list items: `8px` habits, `10px` sections
+
+### TabBar
+
+Fixed `70px` height. Always last child of `.screen`.
 
 ### Safe Area
 
