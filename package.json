@@ -29,7 +29,7 @@
 	"scripts": {
 		"build": "tsc -b && vite build",
 		"check": "tsc -b && vite build",
-		"deploy": "wrangler pages deploy ./dist",
+		"deploy": "npm run build && wrangler deploy",
 		"dev": "vite",
 		"lint": "eslint .",
 		"preview": "npm run build && vite preview"
