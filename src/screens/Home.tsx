@@ -128,7 +128,7 @@ export function Home() {
     <div className="screen">
       {/* Nav row */}
       <div className="flex items-center justify-between" style={{ padding: '14px 18px 0' }}>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'capitalize' }}>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 15, textTransform: 'capitalize' }}>
           {formatDate()}
         </span>
         <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px' }}><Plus size={14} /> nuevo</Btn>
@@ -139,7 +139,7 @@ export function Home() {
         <div className="font-display leading-none" style={{ fontSize: 44 }}>
           Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
         </div>
-        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 16, marginTop: 4 }}>
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 18, marginTop: 4 }}>
           {stats?.todayPoints ?? 0} pts hoy · racha {stats?.streak ?? 0}d
           {(stats?.streak ?? 0) >= 3 && <Fire size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
         </div>
