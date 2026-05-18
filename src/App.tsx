@@ -12,6 +12,7 @@ import { History } from './screens/History';
 import { CreateHabit } from './screens/CreateHabit';
 import { EditHabit } from './screens/EditHabit';
 import { Me } from './screens/Me';
+import { Archive } from './screens/Archive';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -64,6 +65,7 @@ function AppLayout() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
           <Route path="/habits/new" element={<ProtectedRoute><CreateHabit /></ProtectedRoute>} />
+          <Route path="/habits/archived" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           <Route path="/habits/:id" element={<ProtectedRoute><QuickAction /></ProtectedRoute>} />
           <Route path="/habits/:id/edit" element={<ProtectedRoute><EditHabit /></ProtectedRoute>} />
           <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />

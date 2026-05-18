@@ -12,27 +12,41 @@ import { SketchBox } from '../components/SketchBox';
 import { UndoToast } from '../components/UndoToast';
 import { Scribble } from '../components/Scribble';
 
-function todayLocal(tz?: string): string {
-  try {
-    return new Intl.DateTimeFormat('sv-SE', { timeZone: tz ?? 'UTC', dateStyle: 'short' }).format(new Date());
-  } catch {
-    return new Date().toISOString().slice(0, 10);
-  }
-}
-
 function formatDate(): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date());
 }
 
+function todayLocal(): string {
+  return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date());
+}
+
 function habitSubtitle(h: Habit, todaySum: number): string {
   switch (h.type) {
-    case 'count': return `${todaySum} de ${h.goal} hoy · +${h.points} pts c/u`;
-    case 'time':  return `${todaySum} / ${h.goal} min`;
-    case 'yn':    return todaySum >= 1 ? `Hecho · hoy` : 'Pendiente';
-    case 'qty':   return `${todaySum} de ${h.goal} ${h.unit ?? 'unidades'}`;
-    case 'at':    return todaySum >= 1 ? `Registrado` : `Pendiente a hora específica`;
+    case 'count': return todaySum >= h.goal ? 'hecho' : `de ${h.goal} · +${h.points} pts c/u`;
+    case 'time':  return `de ${h.goal} min`;
+    case 'yn':    return todaySum >= 1 ? 'hecho' : 'pendiente';
+    case 'qty':   return `de ${h.goal} ${h.unit ?? ''}`;
+    case 'at':    return todaySum >= 1 ? 'registrado' : 'pendiente';
     default:      return '';
   }
+}
+
+function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
+  const data = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
+  const max = Math.max(1, ...data);
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 24 }}>
+      {data.map((v, i) => (
+        <div key={i} style={{
+          flex: 1,
+          height: `${Math.max(14, (v / max) * 100)}%`,
+          background: i === data.length - 1 ? 'var(--coral)' : 'var(--ink)',
+          opacity: i === data.length - 1 ? 1 : 0.35,
+          borderRadius: 2,
+        }} />
+      ))}
+    </div>
+  );
 }
 
 export function Home() {
@@ -42,29 +56,24 @@ export function Home() {
   const { entries, reload: reloadEntries } = useEntries({ from: today, to: today + 'T23:59:59Z' });
   const { stats, reload: reloadStats } = useStats();
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
-  const [ringStates, setRingStates] = useState<Record<string, 'logging' | 'check' | 'reveal'>>({});
+  const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
 
-  // Sum entries per habit for today
   const sumByHabit: Record<string, number> = {};
-  entries.forEach((e) => {
-    sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value;
-  });
+  entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
 
-  const totalHabits = habits.length;
-  const doneHabits = habits.filter((h) => (sumByHabit[h.id] ?? 0) >= h.goal).length;
-  const dayPct = totalHabits > 0 ? doneHabits / totalHabits : 0;
+  const activeHabits = habits.filter(h => !h.archived_at);
+  const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
+  const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
 
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
-    if (ringStates[habit.id]) return;
-
-    setRingStates(prev => ({ ...prev, [habit.id]: 'logging' }));
+    if (logStates[habit.id]) return;
+    setLogStates(prev => ({ ...prev, [habit.id]: 'logging' }));
     try {
       const entry = await api.entries.create({ habit_id: habit.id, value: 1 });
       await reloadEntries();
       await reloadStats();
-
-      setRingStates(prev => ({ ...prev, [habit.id]: 'check' }));
+      setLogStates(prev => ({ ...prev, [habit.id]: 'done' }));
       showToast({
         id: entry.id,
         text: `${habit.name} · +${entry.points} pts`,
@@ -74,148 +83,190 @@ export function Home() {
           await reloadStats();
         },
       });
-
       setTimeout(() => {
-        setRingStates(prev => ({ ...prev, [habit.id]: 'reveal' }));
-        setTimeout(() => {
-          setRingStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
-        }, 350);
-      }, 650);
+        setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+      }, 900);
     } catch {
-      setRingStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+      setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
     }
   }
 
+  const weeklyChart = stats?.weeklyChart ?? [];
+
   return (
     <div className="screen">
-      {/* Header */}
+      {/* Nav row */}
       <div className="flex items-center justify-between" style={{ padding: '14px 18px 0' }}>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 17 }}>{formatDate()}</span>
-        <button onClick={() => navigate('/me')} className="bg-transparent border-none cursor-pointer p-[4px]">
-          <HandIcon kind="heart" size={20} />
+        <span className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'capitalize' }}>
+          {formatDate()}
+        </span>
+        <button
+          onClick={() => navigate('/habits/new')}
+          className="bg-transparent border-none cursor-pointer font-hand text-ink"
+          style={{ fontSize: 16, padding: '4px 12px', border: '1.8px solid var(--ink)', borderRadius: 999 }}
+        >
+          + nuevo
         </button>
       </div>
 
-      <div style={{ padding: '2px 18px 6px' }}>
+      {/* Title */}
+      <div style={{ padding: '4px 18px 8px' }}>
         <div className="font-display leading-none" style={{ fontSize: 44 }}>
           Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
         </div>
-        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 18, marginTop: 2 }}>
-          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0} días <HandIcon kind="fire" size={18} color="var(--coral)" />
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 16, marginTop: 4 }}>
+          {stats?.todayPoints ?? 0} pts hoy · racha {stats?.streak ?? 0}d
+          {(stats?.streak ?? 0) >= 3 && ' 🔥'}
         </div>
       </div>
 
-      {/* Summary band */}
-      <div className="flex items-center gap-[14px]" style={{ padding: '6px 18px 10px' }}>
-        <Ring size={86} value={dayPct} label={`${Math.round(dayPct * 100)}%`} labelSize={26} sublabel="del día" color="var(--coral)" stroke={7} />
-        <div className="flex-1 flex flex-col gap-[4px]">
-          <span className="font-display leading-none" style={{ fontSize: 28 }}>{doneHabits} / {totalHabits} hábitos</span>
-          <span className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 17 }}>
-            {totalHabits - doneHabits > 0
-              ? `quedan ${totalHabits - doneHabits} por completar`
-              : <><HandIcon kind="check" size={15} color="var(--coral)" /> ¡Todo listo por hoy!</>}
+      {/* Daily summary */}
+      <div className="flex items-center gap-[18px]" style={{ padding: '4px 18px 10px' }}>
+        <Ring
+          size={108}
+          value={dayPct}
+          stroke={10}
+          color="var(--coral)"
+          label={`${Math.round(dayPct * 100)}%`}
+          labelSize={28}
+          sublabel="del día"
+        />
+        <div className="flex-1 flex flex-col gap-[6px]">
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
+              {doneHabits}
+            </span>
+            <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
+              {' / '}{activeHabits.length}
+            </span>
+          </div>
+          <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? ' · ¡completo! 🎉' : ''}
           </span>
+          {weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
         </div>
       </div>
 
       {/* Habit list */}
-      <div className="screen-scroll flex flex-col gap-[8px]" style={{ padding: '0 14px 6px' }}>
+      <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 14px' }}>
         {habitsLoading ? (
           <div className="font-hand text-ink-soft text-center" style={{ padding: 20 }}>Cargando…</div>
-        ) : habits.length === 0 ? (
-          <div className="text-center" style={{ padding: 32 }}>
-            <div className="font-display" style={{ fontSize: 22, marginBottom: 8 }}>Sin hábitos aún</div>
-            <div className="font-hand text-ink-soft">Toca el + para crear el primero</div>
-          </div>
+        ) : activeHabits.length === 0 ? (
+          <SketchBox dashed padding={20} style={{ textAlign: 'center', marginTop: 20 }}>
+            <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>Sin hábitos todavía</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: 12 }}>Empieza creando uno nuevo</div>
+            <button
+              onClick={() => navigate('/habits/new')}
+              className="font-hand cursor-pointer"
+              style={{
+                padding: '12px 24px', borderRadius: 999,
+                border: '1.8px solid var(--coral)', background: 'var(--coral)',
+                color: 'var(--paper)', fontSize: 16,
+              }}
+            >
+              + Crear hábito
+            </button>
+          </SketchBox>
         ) : (
-          habits.map((h) => {
+          activeHabits.map((h) => {
             const sum = sumByHabit[h.id] ?? 0;
             const done = sum >= h.goal;
-            const logState = ringStates[h.id];
-            const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : sum / h.goal;
-            const normalLabel = h.type === 'yn' ? (sum >= 1 ? '✓' : '+') : h.type === 'time' ? `${sum}′` : `${sum}`;
-            const ringColor = (!logState && done) ? 'var(--ink-soft)' : 'var(--coral)';
+            const state = logStates[h.id];
+            const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
+            const valueLabel = h.type === 'yn' ? (sum >= 1 ? '✓' : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
+
             return (
-              <SketchBox
+              <div
                 key={h.id}
-                padding={10}
-                radius={14}
-                className={`flex items-center gap-[10px] cursor-pointer ${done ? 'opacity-55' : 'opacity-100'}`}
                 onClick={() => navigate(`/habits/${h.id}`)}
+                style={{
+                  cursor: 'pointer',
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'opacity 160ms',
+                }}
               >
-                <IconTile kind={h.icon} size={44} />
-                <div className="flex-1 min-w-0">
-                  <div className={`font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap${done ? ' line-through' : ''}`} style={{ fontSize: 26 }}>{h.name}</div>
-                  <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
-                    {habitSubtitle(h, sum)}
+                <SketchBox
+                  padding={14}
+                  radius={16}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    opacity: done ? 0.62 : 1,
+                    background: done ? 'rgba(255,255,255,0.4)' : 'transparent',
+                  }}
+                >
+                  <IconTile kind={h.icon} size={50} />
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap"
+                      style={{
+                        fontSize: 28,
+                        textDecoration: done ? 'line-through' : 'none',
+                      }}
+                    >
+                      {h.name}
+                    </div>
+                    <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 4 }}>
+                      {habitSubtitle(h, sum)}
+                    </div>
                   </div>
-                </div>
-                <div onClick={(e) => { void logHabit(h, e); }} className="cursor-pointer">
-                  {logState === 'logging' ? (
-                    <div className="relative shrink-0" style={{ width: 52, height: 52 }}>
-                      <svg width={52} height={52}>
-                        <circle cx={26} cy={26} r={24} fill="none" stroke="#e8e1cf" strokeWidth={4} />
-                      </svg>
-                      <div className="absolute inset-0" style={{ animation: 'ring-spin 0.75s linear infinite' }}>
-                        <svg width={52} height={52} style={{ transform: 'rotate(-90deg)' }}>
-                          <circle cx={26} cy={26} r={24} fill="none" stroke="var(--coral)" strokeWidth={4}
-                            strokeDasharray="150.8" strokeDashoffset="113" strokeLinecap="round" />
-                        </svg>
-                      </div>
+
+                  {/* Tap-to-log area */}
+                  <div
+                    onClick={(e) => { void logHabit(h, e); }}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44 }}
+                  >
+                    <div
+                      className="font-display"
+                      style={{
+                        fontSize: 38,
+                        lineHeight: 0.95,
+                        letterSpacing: -0.5,
+                        color: done ? 'var(--ink-soft)' : (sum > 0 ? 'var(--coral)' : 'var(--ink)'),
+                        textAlign: 'center',
+                        minWidth: 36,
+                      }}
+                    >
+                      {state === 'logging' ? '…' : state === 'done' ? '✓' : valueLabel}
                     </div>
-                  ) : (
-                    <div className="relative shrink-0" style={{ width: 52, height: 52 }}>
-                      <Ring size={52} value={ringValue} stroke={4} color={ringColor} />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        {logState === 'check' && (
-                          <span className="font-display" style={{ fontSize: 16, fontWeight: 700, display: 'inline-block', animation: 'check-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-                            ✓
-                          </span>
-                        )}
-                        {(logState === 'reveal' || !logState) && (
-                          <span
-                            key={logState === 'reveal' ? 'num-anim' : 'num'}
-                            className="font-display"
-                            style={{
-                              fontSize: 16, fontWeight: 700, display: 'inline-block',
-                              animation: logState === 'reveal' ? 'num-reveal 0.3s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
-                            }}
-                          >
-                            {normalLabel}
-                          </span>
-                        )}
+                    {h.type !== 'yn' && (
+                      <div style={{
+                        width: 44, height: 5, borderRadius: 999,
+                        border: '1px solid var(--ink)', overflow: 'hidden',
+                        background: 'var(--paper)',
+                      }}>
+                        <div style={{
+                          width: `${Math.min(100, ringValue * 100)}%`,
+                          height: '100%',
+                          background: done ? 'var(--ink-soft)' : 'var(--coral)',
+                          transition: 'width 320ms ease',
+                        }} />
                       </div>
-                    </div>
-                  )}
-                </div>
-              </SketchBox>
+                    )}
+                  </div>
+                </SketchBox>
+              </div>
             );
           })
         )}
-        <div style={{ height: 16 }} />
+        <div style={{ height: 80 }} />
       </div>
 
       {/* FAB */}
       <button
         onClick={() => navigate('/habits/new')}
-        className="absolute flex items-center justify-center bg-coral cursor-pointer z-10 rounded-[27px]"
+        className="absolute flex items-center justify-center bg-coral cursor-pointer z-10 rounded-[28px]"
         style={{
-          right: 18,
-          bottom: 86,
-          width: 54,
-          height: 54,
+          right: 18, bottom: 86,
+          width: 56, height: 56,
           border: '2px solid var(--ink)',
-          boxShadow: '2px 3px 0 rgba(0,0,0,0.15)',
+          boxShadow: '2px 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(217,119,87,0.32)',
           WebkitTapHighlightColor: 'transparent',
         }}
       >
-        <HandIcon kind="plus" size={26} color="var(--paper)" />
+        <HandIcon kind="plus" size={28} color="var(--paper)" />
       </button>
 
-      {toast && (
-        <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />
-      )}
-
+      {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
     </div>
   );
 }

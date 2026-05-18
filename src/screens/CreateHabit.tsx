@@ -1,216 +1,303 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
-import { SketchButton } from '../components/SketchButton';
+import { HandIcon } from '../components/HandIcon';
 
-const ICONS = ['dish','water','mug','pill','book','run','dumb','sun','moon','fire','star','leaf','bolt','clock','target','bell','heart','music','phone','plus'];
+const ICONS = [
+  'dish','water','run','pill','book','mug','sun','moon','fire','star',
+  'leaf','bolt','clock','target','dumb','bell','heart','music','phone','plus',
+];
 
 const TYPES = [
-  { id: 'count', label: 'Contar veces', hint: 'lavar platos · vitaminas' },
-  { id: 'time',  label: 'Duración',     hint: 'meditar 15 min · correr 20 min' },
-  { id: 'yn',    label: 'Sí / No diario', hint: 'tomar agua · sin azúcar' },
-  { id: 'qty',   label: 'Cantidad con unidad', hint: 'agua: 8 vasos · 2 L' },
-  { id: 'at',    label: 'A hora específica',  hint: 'medicina 8:00am' },
+  { id: 'count', label: 'Contar',  hint: 'Cuenta cuántas veces lo haces (vasos, repeticiones…)' },
+  { id: 'time',  label: 'Tiempo',  hint: 'Cronometra minutos (meditar, leer…)' },
+  { id: 'yn',    label: 'Marcar',  hint: 'Sí/No · una vez al día' },
 ] as const;
 
-const POINTS_OPTIONS = [1, 5, 10, 20];
+type HabitType = typeof TYPES[number]['id'];
+
+interface StepperProps {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}
+
+function Stepper({ value, onChange, min = 0, max = 999, step = 1 }: StepperProps) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <button
+        onClick={() => onChange(Math.max(min, value - step))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: 48, height: 48, borderRadius: 999,
+          border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 28, lineHeight: 1, color: 'var(--ink)',
+        }}
+      >−</button>
+      <span className="font-display text-center" style={{ fontSize: 42, minWidth: 64, lineHeight: 1 }}>{value}</span>
+      <button
+        onClick={() => onChange(Math.min(max, value + step))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: 48, height: 48, borderRadius: 999,
+          border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 28, lineHeight: 1, color: 'var(--ink)',
+        }}
+      >+</button>
+    </div>
+  );
+}
 
 export function CreateHabit() {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('star');
-  const [type, setType] = useState<'count'|'time'|'yn'|'qty'|'at'>('count');
-  const [goal, setGoal] = useState(1);
-  const [unit, setUnit] = useState('');
-  const [points, setPoints] = useState(5);
-  const [reminder, setReminder] = useState(false);
-  const [reminderTime, setReminderTime] = useState('20:00');
+  const [type, setType] = useState<HabitType>('count');
+  const [goal, setGoal] = useState(3);
+  const [pts, setPts] = useState(5);
   const [saving, setSaving] = useState(false);
-  const [showMoreIcons, setShowMoreIcons] = useState(false);
 
-  const visibleIcons = showMoreIcons ? ICONS : ICONS.slice(0, 18);
+  // Adjust goal defaults when type changes
+  useEffect(() => {
+    if (type === 'yn') setGoal(1);
+    else if (type === 'time' && goal < 5) setGoal(15);
+    else if (type === 'count' && goal > 12) setGoal(3);
+  }, [type]);
 
   async function save() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      const habit = await api.habits.create({ name: name.trim(), icon, type, goal, unit: unit || null, points, sort_order: 0 });
-      if (reminder) {
-        await api.reminders.create(habit.id, { time: reminderTime, days: 'LMXJVSD', enabled: 1 });
-      }
+      await api.habits.create({
+        name: name.trim(), icon,
+        type: type === 'time' ? 'time' : type === 'yn' ? 'yn' : 'count',
+        goal, unit: null, points: pts, sort_order: 0,
+      });
       navigate('/', { replace: true });
     } finally {
       setSaving(false);
     }
   }
 
+  const isValid = name.trim().length > 0;
+  const goalChips = type === 'time' ? [5, 10, 20, 30] : [1, 3, 5, 8];
+  const ptsChips = [1, 2, 5, 10];
+
   return (
     <div className="screen">
       {/* Nav */}
-      <div className="flex items-center justify-between" style={{ padding: '14px 18px 8px', borderBottom: '1px solid var(--paper-2)' }}>
-        <button onClick={() => navigate(-1)} className="bg-transparent border-none cursor-pointer font-hand text-ink-soft" style={{ fontSize: 14 }}>Cancelar</button>
-        <span className="font-display" style={{ fontSize: 22 }}>Nuevo hábito</span>
+      <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button
-          onClick={() => void save()}
-          disabled={!name.trim() || saving}
-          className="bg-transparent border-none cursor-pointer font-hand text-coral"
-          style={{ fontSize: 14, fontWeight: 700, opacity: (!name.trim() || saving) ? 0.4 : 1 }}
-        >
-          {saving ? '…' : 'Guardar'}
-        </button>
+          onClick={() => navigate(-1)}
+          className="font-hand cursor-pointer"
+          style={{
+            height: 36, padding: '0 14px', borderRadius: 999,
+            border: '1.8px solid var(--ink)',
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: 16, background: 'transparent', color: 'var(--ink)',
+          }}
+        >← cancelar</button>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>Nuevo hábito</span>
+        <button
+          onClick={isValid ? () => void save() : undefined}
+          className="font-hand cursor-pointer"
+          style={{
+            height: 36, padding: '0 14px', borderRadius: 999,
+            border: `1.8px solid ${isValid ? 'var(--coral)' : 'var(--ink-soft)'}`,
+            display: 'inline-flex', alignItems: 'center',
+            fontSize: 16, background: 'transparent',
+            color: isValid ? 'var(--coral)' : 'var(--ink-soft)',
+          }}
+        >crear</button>
       </div>
 
-      <div className="screen-scroll flex flex-col gap-[12px]" style={{ padding: '10px 14px' }}>
+      <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 18px 24px' }}>
 
-        {/* Nombre + icon preview */}
-        <SketchBox padding={10} className="flex items-center gap-[10px]">
-          <IconTile kind={icon} size={50} dashed />
-          <div className="flex-1">
-            <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>nombre</div>
-            <input
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej. Lavar platos"
-              className="font-display leading-none bg-transparent w-full outline-none text-ink"
-              style={{
-                fontSize: 22,
-                border: 'none', borderBottom: '1.5px dashed var(--ink)',
-                paddingBottom: 2,
-              }}
-            />
-          </div>
-        </SketchBox>
-
-        {/* Icono picker */}
-        <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 4px 6px' }}>icono</div>
-          <SketchBox padding={8}>
-            <div className="grid gap-[6px]" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
-              {visibleIcons.map((k) => (
-                <IconTile key={k} kind={k} size={42} selected={icon === k} onClick={() => setIcon(k)} />
-              ))}
-            </div>
-            {!showMoreIcons && (
-              <button
-                onClick={() => setShowMoreIcons(true)}
-                className="block w-full font-hand text-ink-soft bg-transparent border-none cursor-pointer text-center"
-                style={{ marginTop: 8, fontSize: 11 }}
-              >
-                ··· ver todos ⌄
-              </button>
-            )}
-          </SketchBox>
-        </div>
-
-        {/* Tipo */}
-        <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 4px 6px' }}>tipo</div>
-          <SketchBox padding={6}>
-            {TYPES.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => setType(t.id)}
-                className="flex items-center gap-[10px] cursor-pointer"
-                style={{ padding: '8px 6px', borderBottom: '1px dashed var(--ink-soft)' }}
-              >
-                <div className="flex items-center justify-center shrink-0" style={{ width: 18, height: 18, borderRadius: 9, border: '1.6px solid var(--ink)' }}>
-                  {type === t.id && <div className="bg-coral" style={{ width: 10, height: 10, borderRadius: 5 }} />}
-                </div>
-                <div className="flex-1">
-                  <div className="font-hand" style={{ fontSize: 14, lineHeight: 1.1 }}>{t.label}</div>
-                  <div className="font-hand text-ink-soft" style={{ fontSize: 11 }}>{t.hint}</div>
-                </div>
+        {/* Preview card */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 12px' }}>
+          <SketchBox padding={12} radius={16} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--paper-2)' }}>
+            <IconTile kind={icon} size={48} />
+            <div>
+              <div className="font-display" style={{ fontSize: 24, lineHeight: 1 }}>{name || 'Nombre del hábito'}</div>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>
+                {TYPES.find(t => t.id === type)?.label} · meta {goal}{type === 'time' ? ' min' : ''} · +{pts} pts
               </div>
-            ))}
+            </div>
           </SketchBox>
         </div>
 
-        {/* Meta */}
+        {/* Name */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Nombre</div>
+          <input
+            autoFocus
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ej. Beber agua"
+            className="font-hand text-ink"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              border: '1.8px solid var(--ink)', borderRadius: 12,
+              background: 'transparent', padding: '12px 14px',
+              fontSize: 19, outline: 'none',
+            }}
+          />
+        </div>
+
+        {/* Type segmented */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Tipo</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {TYPES.map((t) => {
+              const on = t.id === type;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setType(t.id)}
+                  className="font-hand cursor-pointer flex-1"
+                  style={{
+                    textAlign: 'center', padding: '10px 0',
+                    border: '1.8px solid var(--ink)', borderRadius: 999,
+                    background: on ? 'var(--ink)' : 'transparent',
+                    color: on ? 'var(--paper)' : 'var(--ink)',
+                    fontSize: 16,
+                    transition: 'background 180ms',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >{t.label}</button>
+              );
+            })}
+          </div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
+            {TYPES.find(t => t.id === type)?.hint}
+          </div>
+        </div>
+
+        {/* Goal */}
         {type !== 'yn' && (
-          <SketchBox padding={10}>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
-              meta · {type === 'time' ? 'minutos al día' : type === 'qty' ? 'cantidad al día' : 'veces al día'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+              {type === 'time' ? 'Meta · minutos / día' : 'Meta · veces / día'}
             </div>
-            <div className="flex items-center gap-[10px]">
-              <SketchButton style={{ padding: '4px 14px', fontSize: 22 }} onClick={() => setGoal((g) => Math.max(1, g - 1))}>−</SketchButton>
-              <span className="font-display text-center" style={{ fontSize: 32, minWidth: 36 }}>{goal}</span>
-              <SketchButton style={{ padding: '4px 14px', fontSize: 22 }} onClick={() => setGoal((g) => g + 1)}>+</SketchButton>
-              {(type === 'qty' || type === 'time') && (
-                <input
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  placeholder={type === 'time' ? 'min' : 'vasos'}
-                  className="font-hand bg-transparent outline-none text-ink"
-                  style={{ fontSize: 13, border: 'none', borderBottom: '1px dashed var(--ink-soft)', width: 60, marginLeft: 'auto' }}
-                />
-              )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+              <Stepper value={goal} onChange={setGoal} min={1} max={type === 'time' ? 240 : 50} step={type === 'time' ? 5 : 1} />
+              <div style={{ display: 'flex', gap: 6 }}>
+                {goalChips.map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setGoal(v)}
+                    className="font-hand cursor-pointer"
+                    style={{
+                      padding: '6px 10px', borderRadius: 999,
+                      border: '1.6px solid var(--ink)',
+                      background: v === goal ? 'var(--coral-soft)' : 'transparent',
+                      fontSize: 13, color: 'var(--ink)',
+                    }}
+                  >{v}</button>
+                ))}
+              </div>
             </div>
-          </SketchBox>
+          </div>
         )}
 
-        {/* Puntos */}
-        <SketchBox padding={10}>
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="font-hand text-ink-soft" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>puntos por registro</div>
-              <div className="font-display leading-none" style={{ fontSize: 26, marginTop: 2 }}>+{points} pts</div>
+        {/* Points */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>
+            {type === 'time' ? 'Puntos · por minuto' : type === 'yn' ? 'Puntos · al completar' : 'Puntos · por cada uno'}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                onClick={() => setPts(Math.max(1, pts - 1))}
+                className="font-display bg-transparent cursor-pointer"
+                style={{
+                  width: 38, height: 38, borderRadius: 999,
+                  border: '1.8px solid var(--ink)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24, lineHeight: 1, color: 'var(--ink)',
+                }}
+              >−</button>
+              <span className="font-display text-center" style={{ fontSize: 30, minWidth: 44, lineHeight: 1 }}>{pts}</span>
+              <button
+                onClick={() => setPts(Math.min(50, pts + 1))}
+                className="font-display bg-transparent cursor-pointer"
+                style={{
+                  width: 38, height: 38, borderRadius: 999,
+                  border: '1.8px solid var(--ink)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24, lineHeight: 1, color: 'var(--ink)',
+                }}
+              >+</button>
             </div>
-            <div className="flex gap-[6px]">
-              {POINTS_OPTIONS.map((n) => (
+            <div style={{ display: 'flex', gap: 6 }}>
+              {ptsChips.map((v) => (
                 <button
-                  key={n}
-                  onClick={() => setPoints(n)}
+                  key={v}
+                  onClick={() => setPts(v)}
                   className="font-hand cursor-pointer"
                   style={{
-                    padding: '4px 10px', borderRadius: 'var(--radius-pill)',
-                    border: '1.6px solid var(--ink)', fontSize: 13,
-                    background: points === n ? 'var(--ink)' : 'transparent',
-                    color: points === n ? 'var(--paper)' : 'var(--ink)',
+                    padding: '6px 10px', borderRadius: 999,
+                    border: '1.6px solid var(--ink)',
+                    background: v === pts ? 'var(--coral-soft)' : 'transparent',
+                    fontSize: 13, color: 'var(--ink)',
                   }}
-                >{n}</button>
+                >{v}</button>
               ))}
             </div>
           </div>
-        </SketchBox>
+        </div>
 
-        {/* Recordatorio */}
-        <SketchBox padding={10}>
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="font-hand" style={{ fontSize: 14 }}>Recordarme</div>
-              {reminder && (
-                <input
-                  type="time"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
-                  className="font-hand text-ink-soft bg-transparent outline-none border-none"
-                  style={{ fontSize: 13, marginTop: 2 }}
-                />
-              )}
-              {!reminder && <div className="font-hand text-ink-soft" style={{ fontSize: 11 }}>toca para activar</div>}
-            </div>
-            {/* Toggle */}
-            <div
-              onClick={() => setReminder((r) => !r)}
-              className="flex items-center cursor-pointer"
-              style={{
-                width: 46, height: 26, borderRadius: 13,
-                border: '1.6px solid var(--ink)',
-                background: reminder ? 'var(--coral)' : 'transparent',
-                padding: 2,
-                justifyContent: reminder ? 'flex-end' : 'flex-start',
-                transition: 'background 0.2s',
-              }}
-            >
-              <div className="bg-paper" style={{ width: 18, height: 18, borderRadius: 9, border: '1.4px solid var(--ink)' }} />
-            </div>
+        {/* Icon picker */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Ícono</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, padding: '4px 0' }}>
+            {ICONS.map((k) => {
+              const on = k === icon;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setIcon(k)}
+                  style={{
+                    aspectRatio: '1 / 1', width: '100%', borderRadius: 12,
+                    border: `1.8px solid ${on ? 'var(--coral)' : 'var(--ink)'}`,
+                    background: on ? 'var(--coral-soft)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'background 160ms',
+                  }}
+                >
+                  <HandIcon kind={k} size={22} />
+                </button>
+              );
+            })}
           </div>
-        </SketchBox>
+        </div>
 
-        <div style={{ height: 40 }} />
+        {/* Big save button */}
+        <button
+          onClick={isValid ? () => void save() : undefined}
+          className="font-hand cursor-pointer"
+          style={{
+            padding: 14, textAlign: 'center', borderRadius: 999,
+            border: `1.8px solid ${isValid ? 'var(--coral)' : 'var(--ink-soft)'}`,
+            background: isValid ? 'var(--coral)' : 'rgba(217,119,87,0.35)',
+            color: 'var(--paper)', fontSize: 18,
+            transition: 'background 200ms',
+            width: '100%',
+            marginTop: 4,
+          }}
+          disabled={saving}
+        >
+          {saving ? '…' : '+ Crear hábito'}
+        </button>
+
       </div>
     </div>
   );

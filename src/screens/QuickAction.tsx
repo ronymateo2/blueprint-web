@@ -1,26 +1,174 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useEntries } from '../hooks/useEntries';
 import { useUndo } from '../hooks/useUndo';
-import { api } from '../api/client';
+import { api, type Entry } from '../api/client';
 import { Ring } from '../components/Ring';
-import { SketchButton } from '../components/SketchButton';
+import { HandIcon } from '../components/HandIcon';
+import { IconTile } from '../components/IconTile';
 import { UndoToast } from '../components/UndoToast';
+import { BottomSheet } from '../components/BottomSheet';
 import { useHabits } from '../hooks/useHabits';
 
 function todayLocal(): string {
   return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date());
 }
 
-function timeAgo(iso: string): string {
+function relTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 60000;
-  if (diff < 60) return `${Math.round(diff)} min`;
-  if (diff < 1440) return `${Math.floor(diff / 60)}h ${Math.round(diff % 60)}m`;
-  return `${Math.floor(diff / 1440)}d`;
+  if (diff < 1) return 'ahora';
+  if (diff < 60) return `hace ${Math.round(diff)}m`;
+  const h = Math.floor(diff / 60);
+  if (h < 24) return `hace ${h}h`;
+  return `hace ${Math.floor(h / 24)}d`;
 }
 
-function formatTime(iso: string): string {
+function shortTime(iso: string): string {
   return new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
+}
+
+function typeLabel(type: string): string {
+  if (type === 'count') return 'Contar';
+  if (type === 'time') return 'Duración';
+  if (type === 'yn') return 'Marcar';
+  if (type === 'qty') return 'Cantidad';
+  if (type === 'at') return 'A hora';
+  return '';
+}
+
+interface StepperProps {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  big?: boolean;
+}
+
+function Stepper({ value, onChange, min = 0, max = 999, big = false }: StepperProps) {
+  const btnSize = big ? 48 : 38;
+  const btnFontSize = big ? 28 : 24;
+  const numFontSize = big ? 42 : 30;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <button
+        onClick={() => onChange(Math.max(min, value - 1))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: btnSize, height: btnSize, borderRadius: 999,
+          border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: btnFontSize, lineHeight: 1, color: 'var(--ink)',
+        }}
+      >−</button>
+      <span className="font-display text-center" style={{ fontSize: numFontSize, minWidth: big ? 64 : 44, lineHeight: 1 }}>
+        {value}
+      </span>
+      <button
+        onClick={() => onChange(Math.min(max, value + 1))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: btnSize, height: btnSize, borderRadius: 999,
+          border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: btnFontSize, lineHeight: 1, color: 'var(--ink)',
+        }}
+      >+</button>
+    </div>
+  );
+}
+
+interface QuickLogBodyProps {
+  habit: ReturnType<typeof useHabits>['habits'][number];
+  todaySum: number;
+  onLog: (amount: number) => Promise<void>;
+  onClose: () => void;
+}
+
+function QuickLogBody({ habit, todaySum: _todaySum, onLog, onClose }: QuickLogBodyProps) {
+  const [amount, setAmount] = useState(habit.type === 'time' ? 5 : 1);
+  const chips = habit.type === 'time' ? [5, 10, 15, 20, 30] : [1, 2, 3, 5, 8];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <IconTile kind={habit.icon} size={42} />
+        <div>
+          <div className="font-display" style={{ fontSize: 24, lineHeight: 1 }}>{habit.name}</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>
+            {typeLabel(habit.type)} · meta {habit.goal}{habit.type === 'time' ? ' min' : ''}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 0' }}>
+        <span className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
+          cantidad{habit.type === 'time' ? ' (min)' : ''}
+        </span>
+        <Stepper value={amount} onChange={setAmount} min={1} max={habit.type === 'time' ? 240 : 50} big />
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {chips.map((v) => (
+          <button
+            key={v}
+            onClick={() => setAmount(v)}
+            className="font-hand cursor-pointer"
+            style={{
+              padding: '6px 14px', border: '1.6px solid var(--ink)', borderRadius: 999,
+              fontSize: 14,
+              background: v === amount ? 'var(--coral-soft)' : 'transparent',
+              color: 'var(--ink)',
+            }}
+          >
+            {v}{habit.type === 'time' ? '′' : ''}
+          </button>
+        ))}
+      </div>
+
+      <div className="font-hand text-ink-soft text-center" style={{ fontSize: 13, marginTop: 4 }}>
+        Vas a sumar <b style={{ color: 'var(--coral)' }}>+{habit.points * amount} pts</b>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, paddingTop: 10 }}>
+        <button
+          onClick={onClose}
+          className="font-hand cursor-pointer flex-1"
+          style={{
+            padding: 12, textAlign: 'center', borderRadius: 999,
+            border: '1.8px solid var(--ink)', fontSize: 16,
+            background: 'transparent',
+          }}
+        >Cancelar</button>
+        <button
+          onClick={() => void onLog(amount)}
+          className="font-hand cursor-pointer"
+          style={{
+            flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
+            border: '1.8px solid var(--coral)', background: 'var(--coral)',
+            color: 'var(--paper)', fontSize: 16,
+          }}
+        >
+          Registrar +{habit.points * amount} pts
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActionMenuRow({ icon, label, onTap, danger }: { icon: string; label: string; onTap: () => void; danger?: boolean }) {
+  return (
+    <div
+      onClick={onTap}
+      className="cursor-pointer flex items-center gap-[14px]"
+      style={{
+        padding: '12px 4px',
+        borderBottom: '1px dashed var(--ink-soft)',
+      }}
+    >
+      <HandIcon kind={icon} size={20} color={danger ? 'var(--coral)' : 'var(--ink)'} />
+      <span className="font-hand" style={{ fontSize: 17, color: danger ? 'var(--coral)' : 'var(--ink)' }}>{label}</span>
+    </div>
+  );
 }
 
 export function QuickAction() {
@@ -32,8 +180,14 @@ export function QuickAction() {
 
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from: today, to: today + 'T23:59:59Z' });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
-  const [customVal, setCustomVal] = useState<number | null>(null);
-  const [showStepper, setShowStepper] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<Entry | null>(null);
+  const [editAmount, setEditAmount] = useState(1);
+
+  useEffect(() => {
+    if (editEntry) setEditAmount(editEntry.value);
+  }, [editEntry]);
 
   if (!habit) return (
     <div className="screen items-center justify-center">
@@ -42,9 +196,13 @@ export function QuickAction() {
   );
 
   const todaySum = entries.reduce((s, e) => s + e.value, 0);
-  const ringValue = habit.type === 'yn' ? (todaySum >= 1 ? 1 : 0) : todaySum / habit.goal;
-  const ringLabel = habit.type === 'time' ? `${todaySum}′` : habit.type === 'yn' ? (todaySum >= 1 ? '✓' : '0') : `${todaySum} / ${habit.goal}`;
-  const lastEntry = entries[0];
+  const done = todaySum >= habit.goal;
+  const ringValue = habit.type === 'yn' ? (todaySum >= 1 ? 1 : 0) : Math.min(1, todaySum / habit.goal);
+  const ringLabel = habit.type === 'time' ? `${todaySum}′` : habit.type === 'yn' ? (todaySum >= 1 ? '✓' : '+') : `${todaySum}`;
+  const ringSubLabel = habit.type === 'yn'
+    ? (done ? 'completado' : 'toca para marcar')
+    : `de ${habit.goal}${habit.type === 'time' ? ' min' : ''} hoy`;
+  const lastEntry = [...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())[0];
 
   async function doLog(value: number) {
     const entry = await api.entries.create({ habit_id: habit!.id, value });
@@ -54,108 +212,261 @@ export function QuickAction() {
       text: `${habit!.name} · +${entry.points} pts`,
       onUndo: async () => {
         await api.entries.delete(entry.id);
-        setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+        await reloadEntries();
       },
     });
-    setShowStepper(false);
-    setCustomVal(null);
+    setLogOpen(false);
   }
 
-  const unitLabel = habit.type === 'time' ? 'min' : habit.unit ?? 'unidades';
+  async function saveEntryEdit() {
+    if (!editEntry) return;
+    await api.entries.delete(editEntry.id);
+    await api.entries.create({ habit_id: habit!.id, value: editAmount });
+    await reloadEntries();
+    setEditEntry(null);
+  }
+
+  async function deleteEntryEdit() {
+    if (!editEntry) return;
+    await api.entries.delete(editEntry.id);
+    setEntries(prev => prev.filter(e => e.id !== editEntry.id));
+    setEditEntry(null);
+  }
+
+  async function archiveHabit() {
+    if (!id) return;
+    await api.habits.archive(id);
+    navigate('/', { replace: true });
+  }
+
+  async function deleteHabit() {
+    if (!id || !habit) return;
+    if (!confirm(`¿Eliminar "${habit.name}" y todos sus registros?`)) return;
+    await api.habits.delete(id);
+    navigate('/', { replace: true });
+  }
 
   return (
     <div className="screen">
-      {/* Top bar */}
-      <div className="flex items-center justify-between" style={{ padding: '14px 16px 4px' }}>
-        <SketchButton small onClick={() => navigate(-1)}>← Hoy</SketchButton>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{habit.name}</span>
-        <SketchButton small onClick={() => navigate(`/habits/${habit.id}/edit`)}>···</SketchButton>
+      {/* Nav */}
+      <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button
+          onClick={() => navigate(-1)}
+          className="font-hand cursor-pointer"
+          style={{
+            height: 36, padding: '0 14px', borderRadius: 999,
+            border: '1.8px solid var(--ink)',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            fontSize: 16, background: 'transparent', color: 'var(--ink)',
+          }}
+        >
+          ← Hoy
+        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => navigate(`/habits/${habit.id}/edit`)}
+            className="font-hand cursor-pointer"
+            style={{
+              height: 36, padding: '0 14px', borderRadius: 999,
+              border: '1.8px solid var(--ink)',
+              display: 'inline-flex', alignItems: 'center',
+              fontSize: 16, background: 'transparent', color: 'var(--ink)',
+            }}
+          >
+            editar
+          </button>
+          <button
+            onClick={() => setMoreOpen(true)}
+            className="font-hand cursor-pointer"
+            style={{
+              height: 36, padding: '0 14px', borderRadius: 999,
+              border: '1.8px solid var(--ink)',
+              display: 'inline-flex', alignItems: 'center',
+              fontSize: 16, background: 'transparent', color: 'var(--ink)',
+            }}
+          >
+            ···
+          </button>
+        </div>
       </div>
 
-      <div className="screen-scroll">
-        <div className="flex flex-col items-center" style={{ padding: '8px 18px 0' }}>
-          <div className="font-display leading-none" style={{ fontSize: 30, marginTop: 4 }}>{habit.name}</div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 2 }}>
-            {habit.type === 'count' ? `contar · meta ${habit.goal}×/día` :
-             habit.type === 'time'  ? `duración · meta ${habit.goal} min/día` :
-             habit.type === 'yn'    ? 'sí / no · una vez al día' :
-             habit.type === 'qty'   ? `cantidad · meta ${habit.goal} ${habit.unit}` :
-             `a hora específica`}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 18px 0', minHeight: 0 }}>
+        {/* Habit name + icon */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: '100%' }}>
+          <IconTile kind={habit.icon} size={44} />
+          <div
+            className="font-display overflow-hidden text-ellipsis whitespace-nowrap"
+            style={{ fontSize: 34, lineHeight: 1, minWidth: 0 }}
+          >
+            {habit.name}
           </div>
+        </div>
+        <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 6, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          {typeLabel(habit.type)} · meta {habit.goal}{habit.type === 'time' ? ' min' : ''} / día
+        </div>
 
-          {/* BIG CIRCLE */}
-          <div className="relative" style={{ marginTop: 20 }}>
-            <Ring
-              size={220}
-              value={ringValue}
-              stroke={14}
-              color="var(--coral)"
-              label={ringLabel}
-              sublabel="completados hoy"
-            />
-            <div className="absolute inset-0 rounded-[50%] pointer-events-none" style={{ border: '2px dashed var(--ink-soft)', opacity: 0.2 }} />
-          </div>
+        {/* Big ring */}
+        <div
+          onClick={() => void doLog(1)}
+          style={{ marginTop: 22, position: 'relative', cursor: 'pointer' }}
+        >
+          <Ring
+            size={230}
+            stroke={14}
+            value={ringValue}
+            color={done ? 'var(--ink)' : 'var(--coral)'}
+            label={ringLabel}
+            labelSize={60}
+            sublabel={ringSubLabel}
+          />
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            border: '2px dashed var(--ink-soft)', opacity: 0.18,
+            pointerEvents: 'none',
+          }} />
+        </div>
 
-          <div className="flex flex-col items-center gap-[4px]" style={{ marginTop: 14 }}>
-            {lastEntry ? (
-              <span className="font-hand" style={{ fontSize: 14 }}>
-                última vez · <b>hace {timeAgo(lastEntry.logged_at)}</b>
-              </span>
-            ) : (
-              <span className="font-hand text-ink-soft" style={{ fontSize: 14 }}>sin registros hoy</span>
-            )}
-            <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>+{habit.points} pts por cada registro</span>
-          </div>
+        {/* Last entry info */}
+        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          {lastEntry ? (
+            <span className="font-hand" style={{ fontSize: 17 }}>
+              última vez · <b>{relTime(lastEntry.logged_at)}</b>
+            </span>
+          ) : (
+            <span className="font-hand text-ink-soft" style={{ fontSize: 17 }}>aún no hay registros</span>
+          )}
+          <span className="font-hand text-ink-soft" style={{ fontSize: 14, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+            {habit.type === 'time' ? `+${habit.points} pts / minuto` : `+${habit.points} pts / registro`}
+          </span>
+        </div>
 
-          {/* CTA */}
-          <div className="flex flex-col items-center gap-[10px]" style={{ marginTop: 20 }}>
-            <SketchButton filled accent style={{ padding: '12px 32px', fontSize: 18 }} onClick={() => void doLog(1)}>
-              + Registrar uno
-            </SketchButton>
+        {/* CTA */}
+        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => void doLog(1)}
+            className="font-hand cursor-pointer flex items-center gap-[8px]"
+            style={{
+              padding: '14px 36px', fontSize: 20, borderRadius: 999,
+              border: '1.8px solid var(--coral)', background: 'var(--coral)',
+              color: 'var(--paper)',
+            }}
+          >
+            <HandIcon kind="plus" size={20} color="var(--paper)" />
+            {habit.type === 'yn'
+              ? (done ? 'Ya marcado' : 'Marcar como hecho')
+              : habit.type === 'time'
+              ? 'Registrar +1 min'
+              : 'Registrar uno'}
+          </button>
+          {habit.type !== 'yn' && (
             <button
-              onClick={() => setShowStepper((s) => !s)}
-              className="font-hand text-ink-soft bg-transparent border-none cursor-pointer"
-              style={{ fontSize: 13, borderBottom: '1px dashed var(--ink-soft)' }}
+              onClick={() => setLogOpen(true)}
+              className="font-hand bg-transparent border-none cursor-pointer text-ink-soft"
+              style={{ fontSize: 15, borderBottom: '1px dashed var(--ink-soft)' }}
             >
               registrar otra cantidad
             </button>
-          </div>
-
-          {/* Stepper */}
-          {showStepper && (
-            <div className="flex flex-col items-center gap-[10px] w-full" style={{ marginTop: 16, padding: '0 32px' }}>
-              <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>añadir {unitLabel}</span>
-              <div className="flex items-center gap-[14px]">
-                <SketchButton style={{ padding: '6px 16px', fontSize: 22 }} onClick={() => setCustomVal((v) => Math.max(1, (v ?? 1) - 1))}>−</SketchButton>
-                <span className="font-display text-center" style={{ fontSize: 36, minWidth: 40 }}>{customVal ?? 1}</span>
-                <SketchButton style={{ padding: '6px 16px', fontSize: 22 }} onClick={() => setCustomVal((v) => (v ?? 1) + 1)}>+</SketchButton>
-              </div>
-              <SketchButton filled accent style={{ padding: '10px 28px', fontSize: 16, marginTop: 4 }} onClick={() => void doLog(customVal ?? 1)}>
-                Guardar · +{habit.points} pts
-              </SketchButton>
-            </div>
-          )}
-
-          {/* Today's log */}
-          {entries.length > 0 && (
-            <div className="w-full" style={{ padding: '20px 18px 100px' }}>
-              <div className="font-hand text-ink-soft" style={{ fontSize: 12, marginBottom: 6 }}>HOY</div>
-              {entries.map((e) => (
-                <div key={e.id} className="flex justify-between items-center font-hand" style={{ fontSize: 13, padding: '4px 0', borderBottom: '1px dashed var(--ink-soft)' }}>
-                  <span className="text-ink-soft">{formatTime(e.logged_at)}</span>
-                  <span>+{e.value} {habit.type === 'time' ? 'min' : ''}</span>
-                  <span className="text-ink-soft">+{e.points} pts</span>
-                  <button
-                    onClick={async () => { await api.entries.delete(e.id); await reloadEntries(); }}
-                    className="bg-transparent border-none cursor-pointer font-hand text-ink-soft"
-                    style={{ fontSize: 13 }}
-                  >×</button>
-                </div>
-              ))}
-            </div>
           )}
         </div>
       </div>
+
+      {/* Today's log */}
+      <div style={{ padding: '0 18px 18px' }}>
+        <div className="font-hand text-ink-soft" style={{ fontSize: 13, margin: '12px 0 4px', letterSpacing: 0.5 }}>HOY</div>
+        {entries.length === 0 ? (
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, padding: '6px 0' }}>· sin registros aún</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {[...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
+              .slice(0, 5).map((e) => (
+                <div
+                  key={e.id}
+                  onClick={() => setEditEntry(e)}
+                  className="cursor-pointer flex justify-between font-hand"
+                  style={{
+                    fontSize: 15, padding: '6px 0',
+                    borderBottom: '1px dashed var(--ink-soft)',
+                    whiteSpace: 'nowrap', gap: 8,
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    · {shortTime(e.logged_at)} —{' '}
+                    {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
+                  </span>
+                  <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>
+                </div>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* More options sheet */}
+      <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)}>
+        <div className="font-display" style={{ fontSize: 24, marginBottom: 4 }}>{habit.name}</div>
+        <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 8 }}>opciones del hábito</div>
+        <ActionMenuRow icon="clock" label="Ver historial completo" onTap={() => { setMoreOpen(false); navigate(`/history`); }} />
+        <ActionMenuRow icon="leaf" label="Archivar hábito" onTap={() => { setMoreOpen(false); void archiveHabit(); }} />
+        <ActionMenuRow icon="plus" label="Eliminar permanente" onTap={() => { setMoreOpen(false); void deleteHabit(); }} danger />
+      </BottomSheet>
+
+      {/* Quick log with custom amount */}
+      <BottomSheet open={logOpen} onClose={() => setLogOpen(false)}>
+        <QuickLogBody
+          habit={habit}
+          todaySum={todaySum}
+          onLog={doLog}
+          onClose={() => setLogOpen(false)}
+        />
+      </BottomSheet>
+
+      {/* Edit entry sheet */}
+      <BottomSheet open={!!editEntry} onClose={() => setEditEntry(null)}>
+        {editEntry && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="font-display" style={{ fontSize: 22 }}>Editar registro</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
+              {habit.name} · {shortTime(editEntry.logged_at)}
+            </div>
+            {habit.type !== 'yn' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
+                <span className="font-hand" style={{ fontSize: 14 }}>cantidad</span>
+                <Stepper value={editAmount} onChange={setEditAmount} min={1} max={240} />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => void deleteEntryEdit()}
+                className="font-hand cursor-pointer flex-1"
+                style={{
+                  padding: 12, textAlign: 'center', borderRadius: 999,
+                  border: '1.8px solid var(--coral)', color: 'var(--coral)',
+                  fontSize: 16, background: 'transparent',
+                }}
+              >Borrar</button>
+              {habit.type !== 'yn' ? (
+                <button
+                  onClick={() => void saveEntryEdit()}
+                  className="font-hand cursor-pointer"
+                  style={{
+                    flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
+                    border: '1.8px solid var(--ink)', background: 'var(--ink)',
+                    color: 'var(--paper)', fontSize: 16,
+                  }}
+                >Guardar</button>
+              ) : (
+                <button
+                  onClick={() => setEditEntry(null)}
+                  className="font-hand cursor-pointer"
+                  style={{
+                    flex: 1.5, padding: 12, textAlign: 'center', borderRadius: 999,
+                    border: '1.8px solid var(--ink)', fontSize: 16, background: 'transparent',
+                  }}
+                >Cerrar</button>
+              )}
+            </div>
+          </div>
+        )}
+      </BottomSheet>
 
       {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
     </div>
