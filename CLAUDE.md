@@ -6,22 +6,21 @@ React 19 SPA deployed on Cloudflare Pages. Talks to `blueprint_api` (separate Wo
 
 | Layer | Tech |
 |-------|------|
-| Runtime | Cloudflare Pages |
+| Runtime | Cloudflare Pages (static, no Worker) |
 | Framework | React 19 + Vite 6 |
 | Routing | React Router v7 |
 | Styling | **Tailwind CSS v4** + CSS custom properties (design tokens) |
 | PWA | `vite-plugin-pwa` — `autoUpdate` mode, polls every 60s |
 | Language | TypeScript (strict) |
-| Worker | Hono (serves static assets only — no API routes here) |
 
 ## Dev Commands
 
 ```bash
 npm run dev      # Vite dev server → http://localhost:5173
-npm run build    # tsc + vite build
-npm run deploy   # wrangler deploy → Cloudflare Pages
+npm run build    # tsc + vite build → ./dist
+npm run deploy   # wrangler pages deploy ./dist → Cloudflare Pages
 npm run lint     # eslint
-npm run check    # tsc + build + deploy dry-run (CI gate)
+npm run check    # tsc + build (CI gate)
 ```
 
 ## Environment Variables
@@ -35,7 +34,7 @@ In production, set `VITE_API_URL` in Cloudflare Pages dashboard to the Worker UR
 ## File Structure
 
 ```
-src/react-app/
+src/
   index.css           # Tailwind entry: @import "tailwindcss" + @theme tokens
   design/
     tokens.css        # Legacy :root CSS vars (var(--ink) etc.) — kept for dynamic inline styles
@@ -71,8 +70,8 @@ src/react-app/
     client.ts         # Typed fetch wrappers; reads token from localStorage
   App.tsx             # BrowserRouter + ProtectedRoute + all routes
   main.tsx            # ReactDOM.createRoot (StrictMode on) + registerSW() PWA auto-update
-src/worker/
-  index.ts            # Hono worker — serves Pages static assets only
+public/
+  _redirects          # /* /index.html 200 — SPA routing on Cloudflare Pages
 ```
 
 ## Auth
@@ -143,7 +142,7 @@ All font sizes are **inline `style={{ fontSize: N }}`** — not Tailwind text-* 
 | `var(--shadow-float)` | `shadow-float` |
 
 See [`DESIGN.md`](../../DESIGN.md) for full design system reference.
-See [`src/react-app/components/COMPONENTS.md`](src/react-app/components/COMPONENTS.md) for component API reference.
+See [`src/components/COMPONENTS.md`](src/components/COMPONENTS.md) for component API reference.
 
 ## Data Fetching Patterns
 
@@ -164,16 +163,16 @@ No external state manager. No React Query. Simple useState + useEffect + direct 
 | Keep `tokens.css` `:root` vars | Components with computed colors (e.g., `border: \`1.6px solid ${c}\``) still need `var(--ink)` inline |
 | PWA `autoUpdate` + 60s poll | Silently refreshes on new deploy without user prompt; poll catches long-open sessions |
 | No React Query | Simple hooks are enough; the app is small and single-user per session |
-| LocalStorage for token | Simple; no cookie complexity needed for a Cloudflare Pages + Worker setup |
+| LocalStorage for token | Simple; no cookie complexity needed for a Cloudflare Pages setup |
 | React Router `useLocation` in AuthCallback | StrictMode double-invoke would clear `window.location.search` before second effect run |
-| Separate Worker + Pages | Independent deploys; API has its own D1 binding |
+| `public/_redirects` for SPA routing | Cloudflare Pages serves `index.html` for all routes, enabling client-side navigation |
 
 ## Adding a Screen
 
-1. Create `src/react-app/screens/MyScreen.tsx` — always wrap content in `<div className="screen">` + `<div className="screen-scroll">` + `<TabBar />`
+1. Create `src/screens/MyScreen.tsx` — always wrap content in `<div className="screen">` + `<div className="screen-scroll">` + `<TabBar />`
 2. Add route in `App.tsx` inside `<ProtectedRoute>` unless it's a public screen
 3. Add tab entry in `TabBar.tsx` if it becomes a main tab
 
 ## Adding a Hook
 
-Hooks live in `hooks/`. Follow the `useHabits` / `useEntries` pattern: load on mount, expose `reload` for manual refresh, expose `setData` for optimistic updates.
+Hooks live in `src/hooks/`. Follow the `useHabits` / `useEntries` pattern: load on mount, expose `reload` for manual refresh, expose `setData` for optimistic updates.
