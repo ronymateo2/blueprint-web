@@ -290,9 +290,9 @@ export function QuickAction() {
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 18px 0', minHeight: 0 }}>
+      <div className="screen-scroll" style={{ padding: '6px 18px 18px' }}>
         {/* Habit name + icon */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, maxWidth: '100%' }}>
           <IconTile kind={habit.icon} size={44} />
           <div
             className="font-display overflow-hidden text-ellipsis whitespace-nowrap"
@@ -301,14 +301,14 @@ export function QuickAction() {
             {habit.name}
           </div>
         </div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 6, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+        <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 6, letterSpacing: 0.5, textTransform: 'uppercase', textAlign: 'center' }}>
           {typeLabel(habit.type)} · meta {habit.goal}{habit.type === 'time' ? ' min' : ''} / día
         </div>
 
         {/* Big ring */}
         <div
           onClick={() => void doLog(1)}
-          style={{ marginTop: 22, position: 'relative', cursor: 'pointer' }}
+          style={{ margin: '22px auto 0', position: 'relative', cursor: 'pointer', width: 230, height: 230 }}
         >
           <Ring
             size={230}
@@ -368,36 +368,36 @@ export function QuickAction() {
             </button>
           )}
         </div>
-      </div>
 
-      {/* Today's log */}
-      <div style={{ padding: '0 18px 18px' }}>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 13, margin: '12px 0 4px', letterSpacing: 0.5 }}>HOY</div>
-        {entries.length === 0 ? (
-          <div className="font-hand text-ink-soft" style={{ fontSize: 14, padding: '6px 0' }}>· sin registros aún</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {[...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
-              .slice(0, 5).map((e) => (
-                <div
-                  key={e.id}
-                  onClick={() => setEditEntry(e)}
-                  className="cursor-pointer flex justify-between font-hand"
-                  style={{
-                    fontSize: 15, padding: '6px 0',
-                    borderBottom: '1px dashed var(--ink-soft)',
-                    whiteSpace: 'nowrap', gap: 8,
-                  }}
-                >
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    · {shortTime(e.logged_at)} —{' '}
-                    {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
-                  </span>
-                  <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>
-                </div>
-              ))}
-          </div>
-        )}
+        {/* Today's log */}
+        <div style={{ marginTop: 24 }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, margin: '0 0 4px', letterSpacing: 0.5 }}>HOY</div>
+          {entries.length === 0 ? (
+            <div className="font-hand text-ink-soft" style={{ fontSize: 14, padding: '6px 0' }}>· sin registros aún</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {[...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
+                .slice(0, 5).map((e) => (
+                  <div
+                    key={e.id}
+                    onClick={() => setEditEntry(e)}
+                    className="cursor-pointer flex justify-between font-hand"
+                    style={{
+                      fontSize: 15, padding: '6px 0',
+                      borderBottom: '1px dashed var(--ink-soft)',
+                      whiteSpace: 'nowrap', gap: 8,
+                    }}
+                  >
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      · {shortTime(e.logged_at)} —{' '}
+                      {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
+                    </span>
+                    <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* More options sheet */}

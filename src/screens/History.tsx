@@ -52,11 +52,11 @@ export function History() {
             onClick={() => setActiveTab(i)}
             className="flex-1 text-center cursor-pointer bg-transparent font-hand"
             style={{
+              border: 'none',
               padding: '5px 0',
               borderBottom: `${i === activeTab ? 2.5 : 1.5}px solid ${i === activeTab ? 'var(--coral)' : 'var(--ink-soft)'}`,
               fontSize: 15,
               color: i === activeTab ? 'var(--ink)' : 'var(--ink-soft)',
-              border: 'none',
               WebkitTapHighlightColor: 'transparent',
             }}
           >{t}</button>
@@ -75,7 +75,7 @@ export function History() {
               <div key={h.id} className="flex items-center gap-[8px]">
                 <HandIcon kind={h.icon} size={16} />
                 <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 14, width: 72 }}>{h.name}</span>
-                <div className="flex-1 grid gap-[2px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 1fr)' }}>
+                <div className="grid gap-[2px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 8px)', gridAutoColumns: '8px' }}>
                   {habitHeatmap(h.id).slice(-28).map((v, i) => (
                     <div
                       key={i}

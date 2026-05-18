@@ -6,7 +6,6 @@ import { useStats } from '../hooks/useStats';
 import { useUndo } from '../hooks/useUndo';
 import { api, type Habit } from '../api/client';
 import { Ring } from '../components/Ring';
-import { HandIcon } from '../components/HandIcon';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
 import { UndoToast } from '../components/UndoToast';
@@ -248,23 +247,8 @@ export function Home() {
             );
           })
         )}
-        <div style={{ height: 80 }} />
+        <div style={{ height: 20 }} />
       </div>
-
-      {/* FAB */}
-      <button
-        onClick={() => navigate('/habits/new')}
-        className="absolute flex items-center justify-center bg-coral cursor-pointer z-10 rounded-[28px]"
-        style={{
-          right: 18, bottom: 86,
-          width: 56, height: 56,
-          border: '2px solid var(--ink)',
-          boxShadow: '2px 3px 0 rgba(0,0,0,0.18), 0 6px 16px rgba(217,119,87,0.32)',
-          WebkitTapHighlightColor: 'transparent',
-        }}
-      >
-        <HandIcon kind="plus" size={28} color="var(--paper)" />
-      </button>
 
       {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
     </div>

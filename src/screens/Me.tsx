@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FireIcon } from '@phosphor-icons/react';
 import { useAuth } from '../hooks/useAuth';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
@@ -32,7 +33,7 @@ function SettingsRow({
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 14px',
-        borderBottom: last ? 'none' : '1px dashed var(--ink-soft)',
+        borderBottom: last ? 'none' : '1.6px dashed var(--ink-soft)',
       }}
     >
       <HandIcon kind={icon} size={18} color={danger ? 'var(--coral)' : 'var(--ink)'} />
@@ -73,7 +74,7 @@ export function Me() {
 
   const statItems = [
     { icon: 'star',  label: 'XP total',          value: `${xp.toLocaleString('es')} pts` },
-    { icon: 'fire',  label: 'Racha actual',       value: `${streak}d${streak >= 3 ? ' 🔥' : ''}` },
+    { icon: 'fire',  label: 'Racha actual',       value: `${streak}d` },
     { icon: 'check', label: 'Hábitos activos',    value: String(activeCount) },
     { icon: 'clock', label: 'En la app',          value: `nivel ${level}` },
   ];
@@ -97,14 +98,14 @@ export function Me() {
           {user?.avatar_url ? (
             <img
               src={user.avatar_url} alt=""
-              style={{ width: 64, height: 64, borderRadius: 32, border: '2px solid var(--ink)', flexShrink: 0 }}
+              style={{ width: 64, height: 64, borderRadius: 32, border: '1.6px solid var(--ink)', flexShrink: 0 }}
             />
           ) : (
             <div
               className="font-display flex items-center justify-center bg-coral-soft"
               style={{
                 width: 64, height: 64, borderRadius: 32,
-                border: '2px solid var(--ink)', fontSize: 34, lineHeight: 1,
+                border: '1.6px solid var(--ink)', fontSize: 34, lineHeight: 1,
                 flexShrink: 0,
               }}
             >
@@ -125,7 +126,8 @@ export function Me() {
                   fontSize: 13,
                 }}
               >
-                🔥 {streak}d
+                <FireIcon size={13} weight="fill" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
+                {streak}d
               </span>
               <span
                 className="font-hand"
@@ -152,7 +154,7 @@ export function Me() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '14px 16px',
-                borderBottom: i === statItems.length - 1 ? 'none' : '1px dashed var(--ink-soft)',
+                borderBottom: i === statItems.length - 1 ? 'none' : '1.6px dashed var(--ink-soft)',
               }}
             >
               <HandIcon kind={it.icon} size={20} />
@@ -176,7 +178,7 @@ export function Me() {
                 value={tz}
                 onChange={(e) => setTz(e.target.value)}
                 className="font-hand bg-paper text-ink outline-none"
-                style={{ fontSize: 16, border: '1px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
+                style={{ fontSize: 16, border: '1.5px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
               >
                 {TIMEZONES.map((z) => <option key={z} value={z}>{z}</option>)}
               </select>
