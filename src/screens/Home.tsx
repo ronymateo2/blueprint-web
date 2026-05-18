@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
@@ -41,6 +42,7 @@ export function Home() {
   const { entries, reload: reloadEntries } = useEntries({ from: today, to: today + 'T23:59:59Z' });
   const { stats, reload: reloadStats } = useStats();
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
+  const [ringStates, setRingStates] = useState<Record<string, 'logging' | 'check' | 'reveal'>>({});
 
   // Sum entries per habit for today
   const sumByHabit: Record<string, number> = {};
@@ -54,18 +56,34 @@ export function Home() {
 
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
-    const entry = await api.entries.create({ habit_id: habit.id, value: 1 });
-    await reloadEntries();
-    await reloadStats();
-    showToast({
-      id: entry.id,
-      text: `${habit.name} · +${entry.points} pts`,
-      onUndo: async () => {
-        await api.entries.delete(entry.id);
-        await reloadEntries();
-        await reloadStats();
-      },
-    });
+    if (ringStates[habit.id]) return;
+
+    setRingStates(prev => ({ ...prev, [habit.id]: 'logging' }));
+    try {
+      const entry = await api.entries.create({ habit_id: habit.id, value: 1 });
+      await reloadEntries();
+      await reloadStats();
+
+      setRingStates(prev => ({ ...prev, [habit.id]: 'check' }));
+      showToast({
+        id: entry.id,
+        text: `${habit.name} · +${entry.points} pts`,
+        onUndo: async () => {
+          await api.entries.delete(entry.id);
+          await reloadEntries();
+          await reloadStats();
+        },
+      });
+
+      setTimeout(() => {
+        setRingStates(prev => ({ ...prev, [habit.id]: 'reveal' }));
+        setTimeout(() => {
+          setRingStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+        }, 350);
+      }, 650);
+    } catch {
+      setRingStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+    }
   }
 
   return (
@@ -113,6 +131,10 @@ export function Home() {
           habits.map((h) => {
             const sum = sumByHabit[h.id] ?? 0;
             const done = sum >= h.goal;
+            const logState = ringStates[h.id];
+            const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : sum / h.goal;
+            const normalLabel = h.type === 'yn' ? (sum >= 1 ? '✓' : '+') : h.type === 'time' ? `${sum}′` : `${sum}`;
+            const ringColor = (!logState && done) ? 'var(--ink-soft)' : 'var(--coral)';
             return (
               <SketchBox
                 key={h.id}
@@ -128,17 +150,43 @@ export function Home() {
                     {habitSubtitle(h, sum)}
                   </div>
                 </div>
-                <div
-                  onClick={(e) => { void logHabit(h, e); }}
-                  className="cursor-pointer"
-                >
-                  <Ring
-                    size={52}
-                    value={h.type === 'yn' ? (sum >= 1 ? 1 : 0) : sum / h.goal}
-                    stroke={4}
-                    color={done ? 'var(--ink-soft)' : 'var(--coral)'}
-                    label={h.type === 'yn' ? (sum >= 1 ? '✓' : '+') : h.type === 'time' ? `${sum}′` : `${sum}`}
-                  />
+                <div onClick={(e) => { void logHabit(h, e); }} className="cursor-pointer">
+                  {logState === 'logging' ? (
+                    <div className="relative shrink-0" style={{ width: 52, height: 52 }}>
+                      <svg width={52} height={52}>
+                        <circle cx={26} cy={26} r={24} fill="none" stroke="#e8e1cf" strokeWidth={4} />
+                      </svg>
+                      <div className="absolute inset-0" style={{ animation: 'ring-spin 0.75s linear infinite' }}>
+                        <svg width={52} height={52} style={{ transform: 'rotate(-90deg)' }}>
+                          <circle cx={26} cy={26} r={24} fill="none" stroke="var(--coral)" strokeWidth={4}
+                            strokeDasharray="150.8" strokeDashoffset="113" strokeLinecap="round" />
+                        </svg>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative shrink-0" style={{ width: 52, height: 52 }}>
+                      <Ring size={52} value={ringValue} stroke={4} color={ringColor} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        {logState === 'check' && (
+                          <span className="font-display" style={{ fontSize: 16, fontWeight: 700, display: 'inline-block', animation: 'check-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+                            ✓
+                          </span>
+                        )}
+                        {(logState === 'reveal' || !logState) && (
+                          <span
+                            key={logState === 'reveal' ? 'num-anim' : 'num'}
+                            className="font-display"
+                            style={{
+                              fontSize: 16, fontWeight: 700, display: 'inline-block',
+                              animation: logState === 'reveal' ? 'num-reveal 0.3s cubic-bezier(0.34,1.56,0.64,1) both' : undefined,
+                            }}
+                          >
+                            {normalLabel}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </SketchBox>
             );
