@@ -74,8 +74,8 @@ export function History() {
             {habits.slice(0, 6).map((h) => (
               <div key={h.id} className="flex items-center gap-[8px]">
                 <HandIcon kind={h.icon} size={17} />
-                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 15, width: 80 }}>{h.name}</span>
-                <div className="grid gap-[3px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 10px)', gridAutoColumns: '10px', overflow: 'visible' }}>
+                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap flex-1 min-w-0" style={{ fontSize: 15 }}>{h.name}</span>
+                <div className="grid gap-[3px] flex-shrink-0" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 10px)', gridAutoColumns: '10px', overflow: 'visible' }}>
                   {habitHeatmap(h.id).slice(-28).map((v, i) => (
                     <div
                       key={i}
