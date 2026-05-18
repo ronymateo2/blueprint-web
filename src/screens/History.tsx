@@ -19,12 +19,12 @@ export function History() {
   const [activeTab, setActiveTab] = useState(1);
   const { habits } = useHabits();
   const from = activeTab === 0 ? daysAgo(0) : activeTab === 1 ? daysAgo(6) : activeTab === 2 ? daysAgo(29) : daysAgo(364);
-  const { entries } = useEntries({ from });
+  const { entries: recentEntries } = useEntries({ from });
+  const { entries: heatmapEntries } = useEntries({ from: daysAgo(97) });
 
-  // Build per-habit heatmap data (14 weeks)
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
-    entries.filter((e) => e.habit_id === habitId).forEach((e) => {
+    heatmapEntries.filter((e) => e.habit_id === habitId).forEach((e) => {
       const d = e.logged_at.slice(0, 10);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
@@ -36,7 +36,7 @@ export function History() {
     return vals;
   }
 
-  const recent = entries.slice(0, 20);
+  const recent = recentEntries.slice(0, 20);
 
   return (
     <div className="screen">
@@ -67,21 +67,21 @@ export function History() {
 
         {/* Per-habit heatmap rows */}
         <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginBottom: 6 }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginBottom: 8 }}>
             Calor por hábito · 14 semanas
           </div>
-          <div className="flex flex-col gap-[6px]">
+          <div className="flex flex-col gap-[8px]">
             {habits.slice(0, 6).map((h) => (
               <div key={h.id} className="flex items-center gap-[8px]">
-                <HandIcon kind={h.icon} size={16} />
-                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 14, width: 72 }}>{h.name}</span>
-                <div className="grid gap-[2px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 8px)', gridAutoColumns: '8px' }}>
+                <HandIcon kind={h.icon} size={17} />
+                <span className="font-hand overflow-hidden text-ellipsis whitespace-nowrap" style={{ fontSize: 15, width: 80 }}>{h.name}</span>
+                <div className="grid gap-[3px]" style={{ gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 10px)', gridAutoColumns: '10px', overflow: 'visible' }}>
                   {habitHeatmap(h.id).slice(-28).map((v, i) => (
                     <div
                       key={i}
                       style={{
-                        width: 8, height: 8, borderRadius: 2,
-                        border: '0.5px solid var(--ink)',
+                        width: 10, height: 10, borderRadius: 2,
+                        border: '0.75px solid var(--ink)',
                         background: v <= 0 ? 'transparent' : `rgba(42,42,42,${0.15 + v * 0.7})`,
                       }}
                     />
@@ -94,16 +94,16 @@ export function History() {
 
         {/* Recent events */}
         <div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginBottom: 6 }}>RECIENTES</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginBottom: 6 }}>RECIENTES</div>
           {recent.length === 0 ? (
-            <div className="font-hand text-ink-soft" style={{ fontSize: 16, padding: '8px 0' }}>Sin registros en este período</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 17, padding: '8px 0' }}>Sin registros en este período</div>
           ) : (
             recent.map((e) => (
               <div key={e.id} className="flex justify-between items-center font-hand" style={{
-                fontSize: 15,
-                padding: '5px 0', borderBottom: '1px dashed var(--ink-soft)',
+                fontSize: 16,
+                padding: '6px 0', borderBottom: '1px dashed var(--ink-soft)',
               }}>
-                <span className="text-ink-soft" style={{ width: 44 }}>{formatTime(e.logged_at)}</span>
+                <span className="text-ink-soft" style={{ width: 48 }}>{formatTime(e.logged_at)}</span>
                 <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style={{ marginLeft: 10 }}>
                   {e.habit_name ?? 'Hábito'} {e.value > 1 ? `+${e.value}` : '+1'}
                 </span>
