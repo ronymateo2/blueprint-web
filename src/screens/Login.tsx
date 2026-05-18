@@ -17,7 +17,7 @@ export function Login() {
           <HandIcon kind="target" size={40} color="var(--coral)" />
         </div>
         <h1 className="font-display text-center leading-none" style={{ fontSize: 42 }}>
-          Habit Tracker
+          Blueprint
         </h1>
         <Scribble width={120} style={{ marginTop: 4 }} />
         <p className="font-hand text-ink-soft text-center" style={{ fontSize: 15, marginTop: 12, lineHeight: 1.4 }}>
