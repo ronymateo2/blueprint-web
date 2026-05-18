@@ -100,7 +100,7 @@ export function History() {
           ) : (
             recent.map((e) => (
               <div key={e.id} className="flex justify-between items-center font-hand" style={{
-                fontSize: 16,
+                fontSize: 17,
                 padding: '6px 0', borderBottom: '1px dashed var(--ink-soft)',
               }}>
                 <span className="text-ink-soft" style={{ width: 48 }}>{formatTime(e.logged_at)}</span>
@@ -113,7 +113,7 @@ export function History() {
           )}
         </div>
 
-        <div style={{ height: 16 }} />
+        <div style={{ height: 17 }} />
       </div>
 
     </div>

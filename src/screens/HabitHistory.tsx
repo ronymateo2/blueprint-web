@@ -160,7 +160,7 @@ export function HabitHistory() {
                     key={e.id}
                     className="flex justify-between items-center font-hand"
                     style={{
-                      fontSize: 15, padding: '6px 0',
+                      fontSize: 17, padding: '6px 0',
                       borderBottom: '1px dashed var(--ink-soft)',
                     }}
                   >

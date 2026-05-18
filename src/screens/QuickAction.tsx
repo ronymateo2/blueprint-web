@@ -352,9 +352,9 @@ export function QuickAction() {
                     onClick={() => setEditEntry(e)}
                     className="cursor-pointer flex justify-between font-hand"
                     style={{
-                      fontSize: 15, padding: '6px 0',
+                      fontSize: 17, padding: '6px 0',
                       borderBottom: '1px dashed var(--ink-soft)',
-                      whiteSpace: 'nowrap', gap: 8,
+                      whiteSpace: 'nowrap', gap: 4,
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
