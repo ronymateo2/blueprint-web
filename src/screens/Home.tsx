@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -10,6 +10,7 @@ import { Ring } from '../components/Ring';
 import { Scribble } from '../components/Scribble';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
+import { BottomSheet } from '../components/BottomSheet';
 import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
@@ -123,7 +124,7 @@ function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
 export function Home() {
   const navigate = useNavigate();
   const { timezone } = useAuthContext();
-  const { habits, loading: habitsLoading } = useHabits();
+  const { habits, loading: habitsLoading, reload: reloadHabits } = useHabits();
   const { stats, loading: statsLoading, reload: reloadStats } = useStats();
   const realToday = todayLocalDate(timezone);
   const [selectedDate, setSelectedDate] = useState(realToday);
@@ -133,7 +134,38 @@ export function Home() {
   const { show: showToast } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
+  const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressActive = useRef(false);
+
+  function startLongPress(h: Habit) {
+    longPressTimer.current = setTimeout(() => {
+      longPressActive.current = true;
+      navigator.vibrate?.(18);
+      setContextHabit(h);
+    }, 500);
+  }
+
+  function cancelLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  async function archiveHabit(h: Habit) {
+    setContextHabit(null);
+    await api.habits.archive(h.id);
+    await reloadHabits();
+  }
+
+  async function deleteHabit(h: Habit) {
+    if (!confirm(`¿Eliminar "${h.name}" permanentemente?`)) return;
+    setContextHabit(null);
+    await api.habits.delete(h.id);
+    await reloadHabits();
+  }
 
   function toggleRingView() { setRingFlipped(!ringFlipped); }
   function goBack()    { setSelectedDate(d => addDays(d, -1)); }
@@ -358,7 +390,16 @@ export function Home() {
             return (
               <div
                 key={h.id}
-                onClick={isToday ? () => navigate(`/habits/${h.id}`) : undefined}
+                onTouchStart={() => startLongPress(h)}
+                onTouchEnd={cancelLongPress}
+                onTouchMove={cancelLongPress}
+                onMouseDown={() => startLongPress(h)}
+                onMouseUp={cancelLongPress}
+                onMouseLeave={cancelLongPress}
+                onClick={() => {
+                  if (longPressActive.current) { longPressActive.current = false; return; }
+                  if (isToday) navigate(`/habits/${h.id}`);
+                }}
                 style={{
                   cursor: isToday ? 'pointer' : 'default',
                   WebkitTapHighlightColor: 'transparent',
@@ -435,6 +476,49 @@ export function Home() {
         <div style={{ height: 20 }} />
       </div>
 
+      <BottomSheet open={!!contextHabit} onClose={() => setContextHabit(null)}>
+        {contextHabit && (
+          <>
+            <div className="font-display" style={{ fontSize: 22, marginBottom: 2 }}>{contextHabit.name}</div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 16 }}>opciones del hábito</div>
+            {([
+              {
+                icon: <PencilSimpleIcon size={18} />,
+                label: 'Editar hábito',
+                color: 'var(--ink)',
+                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/edit`); },
+              },
+              {
+                icon: <LeafIcon size={18} />,
+                label: 'Archivar hábito',
+                color: 'var(--ink)',
+                action: () => archiveHabit(contextHabit),
+              },
+              {
+                icon: <TrashIcon size={18} />,
+                label: 'Eliminar permanente',
+                color: 'var(--coral)',
+                action: () => deleteHabit(contextHabit),
+              },
+            ] as const).map(({ icon, label, color, action }) => (
+              <button
+                key={label}
+                onClick={action}
+                className="font-hand"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  width: '100%', padding: '13px 0',
+                  background: 'none', border: 'none', borderBottom: '1px dashed var(--ink-soft)',
+                  cursor: 'pointer', fontSize: 17, color,
+                  textAlign: 'left',
+                }}
+              >
+                {icon}{label}
+              </button>
+            ))}
+          </>
+        )}
+      </BottomSheet>
     </div>
   );
 }
