@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fire, Confetti, Plus, Check } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
 import { useUndo } from '../hooks/useUndo';
 import { api, type Habit } from '../api/client';
 import { Ring } from '../components/Ring';
+import { Scribble } from '../components/Scribble';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
-import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
@@ -139,22 +139,20 @@ export function Home() {
 
   return (
     <div className="screen">
-      {/* Nav row */}
-      <div className="flex items-center justify-between" style={{ padding: '14px 18px 0' }}>
-        <span className="font-hand text-ink-soft" style={{ fontSize: 15, textTransform: 'capitalize' }}>
-          {formatDate()}
-        </span>
-        <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px' }}><Plus size={14} /> nuevo</Btn>
-      </div>
-
       {/* Title */}
-      <div style={{ padding: '4px 18px 8px' }}>
-        <div className="font-display leading-none" style={{ fontSize: 44 }}>
-          Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
+      <div style={{ padding: '14px 18px 8px' }}>
+        <div className="flex items-start justify-between">
+          <div className="font-display leading-none" style={{ fontSize: 44 }}>
+            Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
+          </div>
+          <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px', marginTop: 6 }}><PlusIcon size={14} /> nuevo</Btn>
         </div>
-        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 18, marginTop: 4 }}>
-          {stats?.todayPoints ?? 0} pts hoy · racha {stats?.streak ?? 0}d
-          {(stats?.streak ?? 0) >= 3 && <Fire size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
+        <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2, textTransform: 'capitalize' }}>
+          {formatDate()}
+        </div>
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15, marginTop: 2 }}>
+          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0}d
+          {(stats?.streak ?? 0) >= 3 && <FireIcon size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
         </div>
       </div>
 
@@ -206,7 +204,7 @@ export function Home() {
             </span>
           </div>
           <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <Confetti size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
+            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
           </span>
           {weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
         </div>
@@ -219,7 +217,7 @@ export function Home() {
             <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>Sin hábitos todavía</div>
             <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: 12 }}>Empieza creando uno nuevo</div>
             <Btn variant="primary" onClick={() => navigate('/habits/new')} style={{ padding: '12px 24px', fontSize: 16 }}>
-              <Plus size={14} /> Crear hábito
+              <PlusIcon size={14} /> Crear hábito
             </Btn>
           </SketchBox>
         ) : (
@@ -228,7 +226,7 @@ export function Home() {
             const done = sum >= h.goal;
             const state = logStates[h.id];
             const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
-            const valueLabel = h.type === 'yn' ? (sum >= 1 ? <Check size={28} weight="bold" /> : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
+            const valueLabel = h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" /> : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
 
             return (
               <div
@@ -281,7 +279,7 @@ export function Home() {
                         minWidth: 36,
                       }}
                     >
-                      {state === 'logging' ? '…' : state === 'done' ? <Check size={28} weight="bold" /> : valueLabel}
+                      {state === 'logging' ? '…' : state === 'done' ? <CheckIcon size={28} weight="bold" /> : valueLabel}
                     </div>
                     {h.type !== 'yn' && (
                       <div style={{
