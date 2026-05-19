@@ -84,8 +84,10 @@ function AppLayout() {
 
 export function App() {
   useEffect(() => {
-    const saved = localStorage.getItem('habit_display_font');
-    if (saved) document.documentElement.style.setProperty('--font-display', saved);
+    const display = localStorage.getItem('habit_display_font');
+    if (display) document.documentElement.style.setProperty('--font-display', display);
+    const hand = localStorage.getItem('habit_hand_font');
+    if (hand) document.documentElement.style.setProperty('--font-hand', hand);
   }, []);
 
   return (

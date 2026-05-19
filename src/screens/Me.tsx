@@ -10,6 +10,15 @@ import { HandIcon } from '../components/HandIcon';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 
+const HAND_FONTS: { label: string; value: string }[] = [
+  { label: 'Patrick Hand',  value: "'Patrick Hand', cursive" },
+  { label: 'Balsamiq Sans', value: "'Balsamiq Sans', cursive" },
+  { label: 'Comic Neue',    value: "'Comic Neue', cursive" },
+  { label: 'Itim',          value: "'Itim', cursive" },
+  { label: 'Fredoka',       value: "'Fredoka', cursive" },
+  { label: 'Quicksand',     value: "'Quicksand', sans-serif" },
+];
+
 const DISPLAY_FONTS: { label: string; value: string }[] = [
   { label: 'Caveat',           value: "'Caveat', cursive" },
   { label: 'Kalam',            value: "'Kalam', cursive" },
@@ -65,6 +74,10 @@ export function Me() {
   const [displayFont, setDisplayFont] = useState(
     () => localStorage.getItem('habit_display_font') ?? DISPLAY_FONTS[0].value
   );
+  const [editingHandFont, setEditingHandFont] = useState(false);
+  const [handFont, setHandFont] = useState(
+    () => localStorage.getItem('habit_hand_font') ?? HAND_FONTS[0].value
+  );
 
   useEffect(() => {
     void api.habits.list(true).then(all => setArchivedHabits(all.filter(h => !!h.archived_at)));
@@ -90,6 +103,13 @@ export function Me() {
     document.documentElement.style.setProperty('--font-display', value);
     setDisplayFont(value);
     setEditingFont(false);
+  }
+
+  function saveHandFont(value: string) {
+    localStorage.setItem('habit_hand_font', value);
+    document.documentElement.style.setProperty('--font-hand', value);
+    setHandFont(value);
+    setEditingHandFont(false);
   }
 
   const statItems = [
@@ -243,6 +263,36 @@ export function Me() {
               label="Fuente display"
               detail={DISPLAY_FONTS.find(f => f.value === displayFont)?.label ?? 'Caveat'}
               onTap={() => setEditingFont(true)}
+              last
+            />
+          )}
+        </SketchBox>
+
+        {/* Hand font */}
+        <SketchBox padding={0} radius={14}>
+          {editingHandFont ? (
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>Fuente hand</div>
+              <select
+                value={handFont}
+                onChange={(e) => saveHandFont(e.target.value)}
+                className="font-hand bg-paper text-ink outline-none"
+                style={{ fontSize: 16, border: '1.5px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
+              >
+                {HAND_FONTS.map((f) => (
+                  <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
+                ))}
+              </select>
+              <div>
+                <Btn size="sm" onClick={() => setEditingHandFont(false)}>Cancelar</Btn>
+              </div>
+            </div>
+          ) : (
+            <SettingsRow
+              icon="leaf"
+              label="Fuente hand"
+              detail={HAND_FONTS.find(f => f.value === handFont)?.label ?? 'Patrick Hand'}
+              onTap={() => setEditingHandFont(true)}
               last
             />
           )}
