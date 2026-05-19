@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -11,12 +11,26 @@ import { Scribble } from '../components/Scribble';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
 import { Btn } from '../components/Btn';
-import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
+import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
-function formatDate(): string {
-  return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date());
+function formatSelectedDate(localDate: string, tz: string): string {
+  const { from } = localDayUtcRange(localDate, tz);
+  const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
+  return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(noon);
+}
+
+function formatDayName(localDate: string, tz: string): string {
+  const { from } = localDayUtcRange(localDate, tz);
+  const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
+  return new Intl.DateTimeFormat('es', { weekday: 'long' }).format(noon);
+}
+
+function formatDayShort(localDate: string, tz: string): string {
+  const { from } = localDayUtcRange(localDate, tz);
+  const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
+  return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(noon);
 }
 
 function habitSubtitle(h: Habit, todaySum: number): string {
@@ -32,6 +46,34 @@ function habitSubtitle(h: Habit, todaySum: number): string {
 
 // 0=Mon … 6=Sun (ISO week order)
 const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
+  const ft = h.frequency_type ?? 'daily';
+  if (ft === 'daily') return true;
+  let cfg: Record<string, unknown> = {};
+  try { cfg = JSON.parse(h.frequency_config ?? '{}'); } catch { /* */ }
+
+  const { from } = localDayUtcRange(localDate, tz);
+  const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
+
+  if (ft === 'weekly') {
+    const days = (cfg.days as string[]) ?? [];
+    const short = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(noon);
+    const map: Record<string, string> = { Mon: 'L', Tue: 'M', Wed: 'X', Thu: 'J', Fri: 'V', Sat: 'S', Sun: 'D' };
+    return days.includes(map[short] ?? '');
+  }
+  if (ft === 'monthly') {
+    const days = (cfg.days as number[]) ?? [];
+    const dom = noon.getDate();
+    return days.includes(dom);
+  }
+  if (ft === 'interval') {
+    const every = (cfg.every as number) ?? 1;
+    const diffDays = Math.floor((noon.getTime() - new Date(h.created_at).getTime()) / 86_400_000);
+    return diffDays % every === 0;
+  }
+  return true;
+}
 
 function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
   const raw = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
@@ -83,23 +125,33 @@ export function Home() {
   const { timezone } = useAuthContext();
   const { habits, loading: habitsLoading } = useHabits();
   const { stats, loading: statsLoading, reload: reloadStats } = useStats();
-  const today = todayLocalDate(timezone);
-  const { from, to } = localDayUtcRange(today, timezone);
+  const realToday = todayLocalDate(timezone);
+  const [selectedDate, setSelectedDate] = useState(realToday);
+  const isToday = selectedDate === realToday;
+  const { from, to } = localDayUtcRange(selectedDate, timezone);
   const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
   const { show: showToast } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
+  const touchStartX = useRef<number | null>(null);
 
   function toggleRingView() { setRingFlipped(!ringFlipped); }
+  function goBack()    { setSelectedDate(d => addDays(d, -1)); }
+  function goForward() { setSelectedDate(d => addDays(d, +1)); }
+  function goToday()   { setSelectedDate(realToday); }
+
+  const isFuture = selectedDate > realToday;
 
   const sumByHabit: Record<string, number> = {};
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
 
-  const activeHabits = habits.filter(h => !h.archived_at);
+  const activeHabits = habits.filter(h => !h.archived_at && isHabitDueOnDate(h, selectedDate, timezone));
   const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
   const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
   const totalPossiblePoints = activeHabits.reduce((s, h) => s + h.points * h.goal, 0);
-  const ptsPct = totalPossiblePoints > 0 ? Math.min(1, (stats?.todayPoints ?? 0) / totalPossiblePoints) : 0;
+  const selectedDatePoints = entries.reduce((sum, e) => sum + e.points, 0);
+  const displayPoints = isToday ? (stats?.todayPoints ?? 0) : selectedDatePoints;
+  const ptsPct = totalPossiblePoints > 0 ? Math.min(1, displayPoints / totalPossiblePoints) : 0;
 
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
@@ -142,83 +194,154 @@ export function Home() {
       {/* Title */}
       <div style={{ padding: '14px 18px 8px' }}>
         <div className="flex items-start justify-between">
-          <div className="font-display leading-none" style={{ fontSize: 44 }}>
-            Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
-          </div>
+          {isToday ? (
+            <div className="font-display leading-none" style={{ fontSize: 44 }}>
+              Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
+            </div>
+          ) : (
+            <div>
+              <div className="font-display leading-none" style={{ fontSize: 38, textTransform: 'capitalize' }}>
+                {formatDayName(selectedDate, timezone)}
+              </div>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2, textTransform: 'capitalize' }}>
+                {formatDayShort(selectedDate, timezone)}
+              </div>
+            </div>
+          )}
           <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px', marginTop: 6 }}><PlusIcon size={14} /> nuevo</Btn>
         </div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2, textTransform: 'capitalize' }}>
-          {formatDate()}
+
+        {/* Date navigator */}
+        <div className="flex items-center" style={{ marginTop: 6, gap: 4 }}>
+          <button
+            onClick={goBack}
+            className="font-hand bg-transparent cursor-pointer"
+            style={{ color: 'var(--ink-soft)', padding: '2px 4px', border: 'none', lineHeight: 1, flexShrink: 0 }}
+          ><CaretLeftIcon size={18} /></button>
+
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            {isToday ? (
+              <span
+                className="font-hand text-ink-soft"
+                style={{ fontSize: 15, textTransform: 'capitalize', letterSpacing: 0.1 }}
+              >{formatSelectedDate(selectedDate, timezone)}</span>
+            ) : (
+              <button
+                onClick={goToday}
+                className="font-hand cursor-pointer"
+                style={{
+                  border: '1.6px solid var(--coral)', borderRadius: 999,
+                  background: 'transparent', color: 'var(--coral)',
+                  fontSize: 13, padding: '4px 14px', lineHeight: 1.4,
+                }}
+              >← hoy</button>
+            )}
+          </div>
+
+          <button
+            onClick={goForward}
+            className="font-hand bg-transparent cursor-pointer"
+            style={{ color: 'var(--ink-soft)', padding: '2px 4px', border: 'none', lineHeight: 1, flexShrink: 0 }}
+          ><CaretRightIcon size={18} /></button>
         </div>
-        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15, marginTop: 2 }}>
-          {stats?.todayPoints ?? 0} pts · racha {stats?.streak ?? 0}d
+
+        <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15, marginTop: 4 }}>
+          {isToday
+            ? <>{displayPoints} pts · racha {stats?.streak ?? 0}d</>
+            : <>{displayPoints > 0 ? `${displayPoints} pts ese día` : `racha ${stats?.streak ?? 0}d`}</>
+          }
           {(stats?.streak ?? 0) >= 3 && <FireIcon size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
         </div>
       </div>
 
       {/* Daily summary */}
       <div className="flex items-center gap-[18px]" style={{ padding: '4px 18px 10px' }}>
-        <div
-          onClick={toggleRingView}
-          style={{ position: 'relative', cursor: 'pointer', flexShrink: 0, perspective: 300 }}
-        >
-          <Ring size={108} value={ringFlipped ? dayPct : ptsPct} stroke={10} color="var(--coral)" />
-          <div style={{
-            position: 'absolute', inset: 0,
-            transformStyle: 'preserve-3d',
-            transition: 'transform 0.45s ease',
-            transform: ringFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          }}>
-            {/* front: pts */}
+        <div style={{ position: 'relative', flexShrink: 0, cursor: isFuture ? 'default' : 'pointer' }} onClick={isFuture ? undefined : toggleRingView}>
+          <Ring
+            size={108} stroke={10}
+            value={isFuture ? 0 : (ringFlipped ? dayPct : ptsPct)}
+            color={isFuture ? 'var(--ink-soft)' : 'var(--coral)'}
+          />
+          {isFuture ? (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700, color: 'var(--ink-soft)' }}>
+                {activeHabits.length}
+              </span>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>hábitos</span>
+            </div>
+          ) : (
             <div style={{
               position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              backfaceVisibility: 'hidden',
+              transformStyle: 'preserve-3d',
+              transition: 'transform 0.45s ease',
+              transform: ringFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
             }}>
-              <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>
-                {stats?.todayPoints ?? 0}
-              </span>
-              <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>pts hoy</span>
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                backfaceVisibility: 'hidden',
+              }}>
+                <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>{displayPoints}</span>
+                <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>{isToday ? 'pts hoy' : 'pts'}</span>
+              </div>
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                backfaceVisibility: 'hidden',
+                transform: 'rotateY(180deg)',
+              }}>
+                <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>{`${Math.round(dayPct * 100)}%`}</span>
+                <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>del día</span>
+              </div>
             </div>
-            {/* back: pct */}
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              backfaceVisibility: 'hidden',
-              transform: 'rotateY(180deg)',
-            }}>
-              <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>
-                {`${Math.round(dayPct * 100)}%`}
-              </span>
-              <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>del día</span>
-            </div>
-          </div>
+          )}
         </div>
         <div className="flex-1 flex flex-col gap-[6px]">
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-            <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
-              {doneHabits}
+          {!isFuture && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+              <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
+                {doneHabits}
+              </span>
+              <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
+                {' / '}{activeHabits.length}
+              </span>
+            </div>
+          )}
+          {!isFuture && (
+            <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+              hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
             </span>
-            <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
-              {' / '}{activeHabits.length}
-            </span>
-          </div>
-          <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-            hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
-          </span>
-          {weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
+          )}
+          {isToday && weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
         </div>
       </div>
 
       {/* Habit list */}
-      <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 14px' }}>
+      <div
+        className="screen-scroll flex flex-col gap-[10px]"
+        style={{ padding: '4px 14px 14px' }}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchStartX.current === null) return;
+          const dx = e.changedTouches[0].clientX - touchStartX.current;
+          touchStartX.current = null;
+          if (Math.abs(dx) < 50) return;
+          dx < 0 ? goForward() : goBack();
+        }}
+      >
         {activeHabits.length === 0 ? (
           <SketchBox dashed padding={20} style={{ textAlign: 'center', marginTop: 20 }}>
-            <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>Sin hábitos todavía</div>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: 12 }}>Empieza creando uno nuevo</div>
-            <Btn variant="primary" onClick={() => navigate('/habits/new')} style={{ padding: '12px 24px', fontSize: 16 }}>
-              <PlusIcon size={14} /> Crear hábito
-            </Btn>
+            <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>
+              {isToday ? 'Sin hábitos todavía' : 'Día libre'}
+            </div>
+            <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: isToday ? 12 : 0 }}>
+              {isToday ? 'Empieza creando uno nuevo' : 'No hay hábitos programados para este día'}
+            </div>
+            {isToday && (
+              <Btn variant="primary" onClick={() => navigate('/habits/new')} style={{ padding: '12px 24px', fontSize: 16 }}>
+                <PlusIcon size={14} /> Crear hábito
+              </Btn>
+            )}
           </SketchBox>
         ) : (
           activeHabits.map((h) => {
@@ -226,14 +349,18 @@ export function Home() {
             const done = sum >= h.goal;
             const state = logStates[h.id];
             const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
-            const valueLabel = h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" /> : '0') : h.type === 'time' ? `${sum}′` : `${sum}`;
+            const valueLabel = isFuture
+              ? '—'
+              : h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" /> : '0')
+              : h.type === 'time' ? `${sum}′`
+              : `${sum}`;
 
             return (
               <div
                 key={h.id}
-                onClick={() => navigate(`/habits/${h.id}`)}
+                onClick={isToday ? () => navigate(`/habits/${h.id}`) : undefined}
                 style={{
-                  cursor: 'pointer',
+                  cursor: isToday ? 'pointer' : 'default',
                   WebkitTapHighlightColor: 'transparent',
                   transition: 'opacity 160ms',
                 }}
@@ -265,8 +392,12 @@ export function Home() {
 
                   {/* Tap-to-log area */}
                   <div
-                    onClick={(e) => { void logHabit(h, e); }}
-                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44 }}
+                    onClick={isToday ? (e) => { void logHabit(h, e); } : undefined}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
+                      opacity: isToday ? 1 : 0.35,
+                      pointerEvents: isToday ? 'auto' : 'none',
+                    }}
                   >
                     <div
                       className="font-display"
@@ -281,7 +412,7 @@ export function Home() {
                     >
                       {state === 'logging' ? '…' : state === 'done' ? <CheckIcon size={28} weight="bold" /> : valueLabel}
                     </div>
-                    {h.type !== 'yn' && (
+                    {h.type !== 'yn' && !isFuture && (
                       <div style={{
                         width: 44, height: 5, borderRadius: 999,
                         border: '1px solid var(--ink)', overflow: 'hidden',

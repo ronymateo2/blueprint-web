@@ -3,6 +3,17 @@ import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
 import { HandIcon } from '../components/HandIcon';
 import { Btn } from '../components/Btn';
 
+export type FrequencyType = 'daily' | 'weekly' | 'monthly' | 'interval';
+
+const WEEK_DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
+const FREQ_TYPES: { id: FrequencyType; label: string }[] = [
+  { id: 'daily',    label: 'Diario' },
+  { id: 'weekly',   label: 'Semanal' },
+  { id: 'monthly',  label: 'Mensual' },
+  { id: 'interval', label: 'Intervalo' },
+];
+
 export const ICONS = [
   'dish','water','run','pill','book','mug','sun','moon','fire','star',
   'leaf','bolt','clock','target','dumb','bell','heart','music','phone','plus',
@@ -24,6 +35,8 @@ export interface HabitFormValues {
   type: HabitType;
   goal: number;
   pts: number;
+  frequency_type: FrequencyType;
+  frequency_config: string;
 }
 
 interface StepperProps {
@@ -81,7 +94,17 @@ export function HabitForm({
   const [type, setType] = useState<HabitType>(defaultValues?.type ?? 'count');
   const [goal, setGoal] = useState(defaultValues?.goal ?? 3);
   const [pts, setPts] = useState(defaultValues?.pts ?? 5);
+  const [freqType, setFreqTypeRaw] = useState<FrequencyType>(defaultValues?.frequency_type ?? 'daily');
+  const [freqConfig, setFreqConfig] = useState(defaultValues?.frequency_config ?? '{}');
   const [saving, setSaving] = useState(false);
+
+  function setFreqType(ft: FrequencyType) {
+    setFreqTypeRaw(ft);
+    if (ft === 'weekly') setFreqConfig(JSON.stringify({ days: ['L', 'M', 'X', 'J', 'V'] }));
+    else if (ft === 'monthly') setFreqConfig(JSON.stringify({ days: [1] }));
+    else if (ft === 'interval') setFreqConfig(JSON.stringify({ every: 2 }));
+    else setFreqConfig('{}');
+  }
 
   // Auto-adjust goal defaults on type change — only for new habits
   useEffect(() => {
@@ -96,7 +119,7 @@ export function HabitForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await onSubmit({ name: name.trim(), icon, type, goal, pts });
+      await onSubmit({ name: name.trim(), icon, type, goal, pts, frequency_type: freqType, frequency_config: freqConfig });
     } finally {
       setSaving(false);
     }
@@ -159,6 +182,85 @@ export function HabitForm({
           <div className="font-hand text-ink-soft" style={{ fontSize: 13 }}>
             {TYPES.find(t => t.id === type)?.hint}
           </div>
+        </div>
+
+        {/* Frequency */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Frecuencia</div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {FREQ_TYPES.map((f) => (
+              <Btn
+                key={f.id}
+                variant="segment"
+                active={f.id === freqType}
+                onClick={() => setFreqType(f.id)}
+                className="flex-1"
+                style={{ padding: '10px 0', fontSize: 14 }}
+              >{f.label}</Btn>
+            ))}
+          </div>
+
+          {freqType === 'weekly' && (() => {
+            const cfg = JSON.parse(freqConfig) as { days?: string[] };
+            const sel = cfg.days ?? ['L', 'M', 'X', 'J', 'V'];
+            return (
+              <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                {WEEK_DAYS.map((d) => (
+                  <Btn
+                    key={d}
+                    variant="chip"
+                    size="xs"
+                    active={sel.includes(d)}
+                    className="flex-1"
+                    style={{ padding: '8px 0', fontSize: 15, fontWeight: 600 }}
+                    onClick={() => {
+                      const next = sel.includes(d) ? sel.filter(x => x !== d) : [...sel, d];
+                      if (next.length > 0) setFreqConfig(JSON.stringify({ days: next }));
+                    }}
+                  >{d}</Btn>
+                ))}
+              </div>
+            );
+          })()}
+
+          {freqType === 'monthly' && (() => {
+            const cfg = JSON.parse(freqConfig) as { days?: number[] };
+            const sel = cfg.days ?? [1];
+            return (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <Btn
+                    key={d}
+                    variant="chip"
+                    size="xs"
+                    active={sel.includes(d)}
+                    style={{ width: 36, padding: '6px 0', fontSize: 13 }}
+                    onClick={() => {
+                      const next = sel.includes(d) ? sel.filter(x => x !== d) : [...sel, d].sort((a, b) => a - b);
+                      if (next.length > 0) setFreqConfig(JSON.stringify({ days: next }));
+                    }}
+                  >{d}</Btn>
+                ))}
+              </div>
+            );
+          })()}
+
+          {freqType === 'interval' && (() => {
+            const cfg = JSON.parse(freqConfig) as { every?: number };
+            const every = cfg.every ?? 2;
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                <span className="font-hand text-ink-soft" style={{ fontSize: 15 }}>Cada</span>
+                <Stepper
+                  value={every}
+                  onChange={(v) => setFreqConfig(JSON.stringify({ every: v }))}
+                  min={2}
+                  max={90}
+                />
+                <span className="font-hand text-ink-soft" style={{ fontSize: 15 }}>días</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Goal */}

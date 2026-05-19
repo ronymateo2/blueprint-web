@@ -49,6 +49,8 @@ export interface Habit {
   unit: string | null;
   points: number;
   sort_order: number;
+  frequency_type: 'daily' | 'weekly' | 'monthly' | 'interval';
+  frequency_config: string;
   archived_at: string | null;
   created_at: string;
   updated_at: string;

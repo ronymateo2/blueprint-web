@@ -11,6 +11,8 @@ export function CreateHabit() {
       name: values.name, icon: values.icon,
       type: values.type === 'time' ? 'time' : values.type === 'yn' ? 'yn' : 'count',
       goal: values.goal, unit: null, points: values.pts, sort_order: 0,
+      frequency_type: values.frequency_type,
+      frequency_config: values.frequency_config,
     });
     navigate('/', { replace: true });
   }

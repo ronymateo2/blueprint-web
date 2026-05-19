@@ -25,6 +25,8 @@ export function EditHabit() {
       name: values.name, icon: values.icon,
       type: values.type === 'time' ? 'time' : values.type === 'yn' ? 'yn' : 'count',
       goal: values.goal, points: values.pts,
+      frequency_type: values.frequency_type,
+      frequency_config: values.frequency_config,
     });
     navigate(-1);
   }
@@ -54,6 +56,8 @@ export function EditHabit() {
         type: apiTypeToDesign(habit.type),
         goal: habit.goal,
         pts: habit.points,
+        frequency_type: habit.frequency_type ?? 'daily',
+        frequency_config: habit.frequency_config ?? '{}',
       }}
       onSubmit={save}
       onCancel={() => navigate(-1)}

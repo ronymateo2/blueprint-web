@@ -28,6 +28,12 @@ export function localDayUtcRange(localDate: string, tz = browserTz): { from: str
   };
 }
 
+export function addDays(localDate: string, n: number): string {
+  const d = new Date(`${localDate}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 export function formatTime(isoUtc: string, tz = browserTz): string {
   return new Intl.DateTimeFormat('es', {
     timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
