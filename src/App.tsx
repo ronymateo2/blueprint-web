@@ -59,6 +59,8 @@ function AppLayout() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1,
           animation: `${anim} 0.28s cubic-bezier(0.22, 1, 0.36, 1) both`,
         }}
       >

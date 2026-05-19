@@ -6,6 +6,7 @@ import { SketchBox } from '../components/SketchBox';
 import { Btn } from '../components/Btn';
 import { IconTile } from '../components/IconTile';
 import { Scribble } from '../components/Scribble';
+import { ConfirmSheet } from '../components/ConfirmSheet';
 
 function daysAgo(isoDate: string): number {
   return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);
@@ -15,6 +16,7 @@ export function Archive() {
   const navigate = useNavigate();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
+  const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
 
   async function load() {
     setLoading(true);
@@ -34,7 +36,6 @@ export function Archive() {
   }
 
   async function deleteHabit(h: Habit) {
-    if (!confirm(`¿Eliminar "${h.name}" y todos sus registros? No se puede deshacer.`)) return;
     await api.habits.delete(h.id);
     await load();
   }
@@ -91,7 +92,7 @@ export function Archive() {
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                     <Btn variant="danger" size="xs" onClick={() => void restore(h)}><ArrowCounterClockwise size={14} /> Restaurar</Btn>
-                    <Btn size="xs" onClick={() => void deleteHabit(h)}>borrar</Btn>
+                    <Btn size="xs" onClick={() => setConfirmDelete(h)}>borrar</Btn>
                   </div>
                 </div>
               </SketchBox>
@@ -99,6 +100,13 @@ export function Archive() {
           })
         )}
       </div>
+      <ConfirmSheet
+        open={!!confirmDelete}
+        title={`¿Eliminar «${confirmDelete?.name}»?`}
+        description="Se borrarán todos sus registros. No se puede deshacer."
+        onConfirm={() => { const h = confirmDelete!; setConfirmDelete(null); void deleteHabit(h); }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }

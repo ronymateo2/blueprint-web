@@ -8,6 +8,7 @@ import { Ring } from '../components/Ring';
 import { HandIcon } from '../components/HandIcon';
 import { IconTile } from '../components/IconTile';
 import { BottomSheet } from '../components/BottomSheet';
+import { ConfirmSheet } from '../components/ConfirmSheet';
 import { Btn } from '../components/Btn';
 import { useHabits } from '../hooks/useHabits';
 import { todayLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
@@ -187,6 +188,7 @@ export function QuickAction() {
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
   const { show: showToast } = useUndo();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry | null>(null);
   const [editAmount, setEditAmount] = useState(1);
@@ -247,7 +249,6 @@ export function QuickAction() {
 
   async function deleteHabit() {
     if (!id || !habit) return;
-    if (!confirm(`¿Eliminar "${habit.name}" y todos sus registros?`)) return;
     await api.habits.delete(id);
     navigate('/', { replace: true });
   }
@@ -371,7 +372,7 @@ export function QuickAction() {
         <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 8 }}>opciones del hábito</div>
         <ActionMenuRow icon="clock" label="Ver historial completo" onTap={() => { setMoreOpen(false); navigate(`/habits/${habit.id}/history`); }} />
         <ActionMenuRow icon="leaf" label="Archivar hábito" onTap={() => { setMoreOpen(false); void archiveHabit(); }} />
-        <ActionMenuRow icon="plus" label="Eliminar permanente" onTap={() => { setMoreOpen(false); void deleteHabit(); }} danger />
+        <ActionMenuRow icon="plus" label="Eliminar permanente" onTap={() => { setMoreOpen(false); setConfirmDelete(true); }} danger />
       </BottomSheet>
 
       {/* Quick log with custom amount */}
@@ -400,6 +401,13 @@ export function QuickAction() {
         )}
       </BottomSheet>
 
+      <ConfirmSheet
+        open={confirmDelete}
+        title={`¿Eliminar «${habit.name}»?`}
+        description="Se borrarán todos sus registros. No se puede deshacer."
+        onConfirm={() => { setConfirmDelete(false); void deleteHabit(); }}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }

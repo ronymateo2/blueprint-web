@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, type Habit } from '../api/client';
 import { HabitForm, type HabitFormValues, type HabitType } from './HabitForm';
+import { ConfirmSheet } from '../components/ConfirmSheet';
 
 function apiTypeToDesign(t: Habit['type']): HabitType {
   if (t === 'time') return 'time';
@@ -13,6 +14,7 @@ export function EditHabit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [habit, setHabit] = useState<Habit | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -33,7 +35,6 @@ export function EditHabit() {
 
   async function archiveHabit() {
     if (!id || !habit) return;
-    if (!confirm(`Archivar "${habit.name}"? Podrás restaurarlo después.`)) return;
     await api.habits.archive(id);
     navigate('/', { replace: true });
   }
@@ -47,6 +48,7 @@ export function EditHabit() {
   }
 
   return (
+    <>
     <HabitForm
       navTitle="Editar hábito"
       saveLabel="guardar"
@@ -63,7 +65,7 @@ export function EditHabit() {
       onCancel={() => navigate(-1)}
       bottomSlot={
         <button
-          onClick={() => void archiveHabit()}
+          onClick={() => setConfirmArchive(true)}
           className="font-hand cursor-pointer"
           style={{
             padding: 12, textAlign: 'center', borderRadius: 999,
@@ -74,5 +76,14 @@ export function EditHabit() {
         >Archivar hábito</button>
       }
     />
+    <ConfirmSheet
+      open={confirmArchive}
+      title={`¿Archivar «${habit.name}»?`}
+      description="Podrás restaurarlo desde el archivo cuando quieras."
+      confirmLabel="Archivar"
+      onConfirm={() => { setConfirmArchive(false); void archiveHabit(); }}
+      onCancel={() => setConfirmArchive(false)}
+    />
+    </>
   );
 }

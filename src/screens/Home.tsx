@@ -11,6 +11,7 @@ import { Scribble } from '../components/Scribble';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
 import { BottomSheet } from '../components/BottomSheet';
+import { ConfirmSheet } from '../components/ConfirmSheet';
 import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
@@ -135,6 +136,7 @@ export function Home() {
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
   const touchStartX = useRef<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressActive = useRef(false);
@@ -161,8 +163,14 @@ export function Home() {
   }
 
   async function deleteHabit(h: Habit) {
-    if (!confirm(`¿Eliminar "${h.name}" permanentemente?`)) return;
     setContextHabit(null);
+    setConfirmDelete(h);
+  }
+
+  async function executeDelete() {
+    if (!confirmDelete) return;
+    const h = confirmDelete;
+    setConfirmDelete(null);
     await api.habits.delete(h.id);
     await reloadHabits();
   }
@@ -404,6 +412,8 @@ export function Home() {
                   cursor: isToday ? 'pointer' : 'default',
                   WebkitTapHighlightColor: 'transparent',
                   transition: 'opacity 160ms',
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
               >
                 <SketchBox
@@ -476,6 +486,13 @@ export function Home() {
         <div style={{ height: 20 }} />
       </div>
 
+      <ConfirmSheet
+        open={!!confirmDelete}
+        title={`¿Eliminar «${confirmDelete?.name}»?`}
+        description="Se borrarán todos sus registros. No se puede deshacer."
+        onConfirm={executeDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
       <BottomSheet open={!!contextHabit} onClose={() => setContextHabit(null)}>
         {contextHabit && (
           <>
