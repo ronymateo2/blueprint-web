@@ -14,6 +14,7 @@ import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 function formatDate(): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date());
@@ -88,6 +89,9 @@ export function Home() {
   const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
+  const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
+
+  function toggleRingView() { setRingFlipped(!ringFlipped); }
 
   const sumByHabit: Record<string, number> = {};
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
@@ -95,6 +99,8 @@ export function Home() {
   const activeHabits = habits.filter(h => !h.archived_at);
   const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
   const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
+  const totalPossiblePoints = activeHabits.reduce((s, h) => s + h.points * h.goal, 0);
+  const ptsPct = totalPossiblePoints > 0 ? Math.min(1, (stats?.todayPoints ?? 0) / totalPossiblePoints) : 0;
 
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
@@ -155,15 +161,42 @@ export function Home() {
 
       {/* Daily summary */}
       <div className="flex items-center gap-[18px]" style={{ padding: '4px 18px 10px' }}>
-        <Ring
-          size={108}
-          value={dayPct}
-          stroke={10}
-          color="var(--coral)"
-          label={`${Math.round(dayPct * 100)}%`}
-          labelSize={28}
-          sublabel="del día"
-        />
+        <div
+          onClick={toggleRingView}
+          style={{ position: 'relative', cursor: 'pointer', flexShrink: 0, perspective: 300 }}
+        >
+          <Ring size={108} value={ringFlipped ? dayPct : ptsPct} stroke={10} color="var(--coral)" />
+          <div style={{
+            position: 'absolute', inset: 0,
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.45s ease',
+            transform: ringFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          }}>
+            {/* front: pts */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+            }}>
+              <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>
+                {stats?.todayPoints ?? 0}
+              </span>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>pts hoy</span>
+            </div>
+            {/* back: pct */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}>
+              <span className="font-display leading-none" style={{ fontSize: 28, fontWeight: 700 }}>
+                {`${Math.round(dayPct * 100)}%`}
+              </span>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 12, marginTop: 2 }}>del día</span>
+            </div>
+          </div>
+        </div>
         <div className="flex-1 flex flex-col gap-[6px]">
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
             <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
