@@ -83,6 +83,11 @@ function AppLayout() {
 }
 
 export function App() {
+  useEffect(() => {
+    const saved = localStorage.getItem('habit_display_font');
+    if (saved) document.documentElement.style.setProperty('--font-display', saved);
+  }, []);
+
   return (
     <AuthProvider>
       <BrowserRouter>

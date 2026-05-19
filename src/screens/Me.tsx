@@ -10,6 +10,13 @@ import { HandIcon } from '../components/HandIcon';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 
+const DISPLAY_FONTS: { label: string; value: string }[] = [
+  { label: 'Caveat',           value: "'Caveat', cursive" },
+  { label: 'Kalam',            value: "'Kalam', cursive" },
+  { label: 'Handlee',          value: "'Handlee', cursive" },
+  { label: 'Edu QLD Beginner', value: "'Edu QLD Beginner', cursive" },
+];
+
 const TIMEZONES = [
   'UTC', 'America/Santo_Domingo', 'America/New_York', 'America/Chicago',
   'America/Denver', 'America/Los_Angeles', 'America/Mexico_City', 'America/Bogota',
@@ -54,6 +61,10 @@ export function Me() {
   const [tz, setTz] = useState(user?.timezone ?? 'UTC');
   const [saving, setSaving] = useState(false);
   const [archivedHabits, setArchivedHabits] = useState<Habit[]>([]);
+  const [editingFont, setEditingFont] = useState(false);
+  const [displayFont, setDisplayFont] = useState(
+    () => localStorage.getItem('habit_display_font') ?? DISPLAY_FONTS[0].value
+  );
 
   useEffect(() => {
     void api.habits.list(true).then(all => setArchivedHabits(all.filter(h => !!h.archived_at)));
@@ -72,6 +83,13 @@ export function Me() {
     setUser({ ...user!, timezone: tz });
     setSaving(false);
     setEditingTz(false);
+  }
+
+  function saveFont(value: string) {
+    localStorage.setItem('habit_display_font', value);
+    document.documentElement.style.setProperty('--font-display', value);
+    setDisplayFont(value);
+    setEditingFont(false);
   }
 
   const statItems = [
@@ -195,6 +213,36 @@ export function Me() {
               label="Zona horaria"
               detail={user?.timezone ?? 'UTC'}
               onTap={() => setEditingTz(true)}
+              last
+            />
+          )}
+        </SketchBox>
+
+        {/* Display font */}
+        <SketchBox padding={0} radius={14}>
+          {editingFont ? (
+            <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>Fuente display</div>
+              <select
+                value={displayFont}
+                onChange={(e) => saveFont(e.target.value)}
+                className="font-hand bg-paper text-ink outline-none"
+                style={{ fontSize: 16, border: '1.5px solid var(--ink-soft)', borderRadius: 8, padding: '6px 10px' }}
+              >
+                {DISPLAY_FONTS.map((f) => (
+                  <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>{f.label}</option>
+                ))}
+              </select>
+              <div>
+                <Btn size="sm" onClick={() => setEditingFont(false)}>Cancelar</Btn>
+              </div>
+            </div>
+          ) : (
+            <SettingsRow
+              icon="star"
+              label="Fuente display"
+              detail={DISPLAY_FONTS.find(f => f.value === displayFont)?.label ?? 'Caveat'}
+              onTap={() => setEditingFont(true)}
               last
             />
           )}
