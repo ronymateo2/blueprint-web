@@ -11,17 +11,17 @@ export function useEntries(opts: UseEntriesOptions = {}) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await api.entries.list({ habit_id: opts.habitId, from: opts.from, to: opts.to });
       setEntries(data);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [opts.habitId, opts.from, opts.to]);
 
   useEffect(() => { void load(); }, [load]);
 
-  return { entries, loading, reload: load, setEntries };
+  return { entries, loading, reload: () => load(false), setEntries };
 }

@@ -5,17 +5,17 @@ export function useStats() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await api.stats.get();
       setStats(data);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  return { stats, loading, reload: load };
+  return { stats, loading, reload: () => load(false) };
 }
