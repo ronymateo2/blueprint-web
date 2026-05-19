@@ -127,7 +127,8 @@ export function Home() {
   const { from, to } = localDayUtcRange(selectedDate, timezone);
   const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
   const { show: showToast } = useUndo();
-  const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
+  const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done' | 'exiting'>>({});
+  const [completingHabitIds, setCompletingHabitIds] = useState<Record<string, boolean>>({});
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
@@ -191,9 +192,19 @@ export function Home() {
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
 
   const activeHabits = habits.filter(h => !h.archived_at && isHabitDueOnDate(h, selectedDate, timezone));
-  const pendingHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) < h.goal);
-  const completedHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal);
-  const doneHabits = completedHabits.length;
+  const pendingHabits = activeHabits.filter(h => {
+    const sum = sumByHabit[h.id] ?? 0;
+    const isCompleted = sum >= h.goal;
+    const isTransitioning = !!completingHabitIds[h.id];
+    return !isCompleted || isTransitioning;
+  });
+  const completedHabits = activeHabits.filter(h => {
+    const sum = sumByHabit[h.id] ?? 0;
+    const isCompleted = sum >= h.goal;
+    const isTransitioning = !!completingHabitIds[h.id];
+    return isCompleted && !isTransitioning;
+  });
+  const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
   const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
   const totalPossiblePoints = activeHabits.reduce((s, h) => s + h.points * h.goal, 0);
   const selectedDatePoints = entries.reduce((sum, e) => sum + e.points, 0);
@@ -203,7 +214,15 @@ export function Home() {
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
     if (logStates[habit.id]) return;
+
+    const currentSum = sumByHabit[habit.id] ?? 0;
+    const isCompleting = currentSum < habit.goal && (currentSum + 1) >= habit.goal;
+
     setLogStates(prev => ({ ...prev, [habit.id]: 'logging' }));
+    if (isCompleting) {
+      setCompletingHabitIds(prev => ({ ...prev, [habit.id]: true }));
+    }
+
     try {
       const payload: Parameters<typeof api.entries.create>[0] = { habit_id: habit.id, value: 1 };
       if (!isToday) {
@@ -222,11 +241,23 @@ export function Home() {
           await reloadStats();
         },
       });
-      setTimeout(() => {
-        setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
-      }, 900);
+
+      if (isCompleting) {
+        setTimeout(() => {
+          setLogStates(prev => ({ ...prev, [habit.id]: 'exiting' }));
+          setTimeout(() => {
+            setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+            setCompletingHabitIds(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+          }, 300);
+        }, 800);
+      } else {
+        setTimeout(() => {
+          setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+        }, 800);
+      }
     } catch {
       setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
+      setCompletingHabitIds(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
     }
   }
 
@@ -439,10 +470,12 @@ export function Home() {
                   style={{
                     cursor: !isFuture ? 'pointer' : 'default',
                     WebkitTapHighlightColor: 'transparent',
-                    transition: 'opacity 160ms',
                     userSelect: 'none',
                     WebkitUserSelect: 'none',
-                    animation: 'fadeIn 0.22s ease-out',
+                    animation: state === 'exiting'
+                      ? 'card-exit 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                      : 'fadeIn 0.22s ease-out',
+                    overflow: state === 'exiting' ? 'hidden' : undefined,
                   }}
                 >
                   <SketchBox
@@ -490,7 +523,7 @@ export function Home() {
                           minWidth: 36,
                         }}
                       >
-                        {state === 'logging' ? '…' : state === 'done' ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : valueLabel}
+                        {state === 'logging' ? '…' : (state === 'done' || state === 'exiting') ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : valueLabel}
                       </div>
                       {h.type !== 'yn' && !isFuture && (
                         <div style={{
