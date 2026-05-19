@@ -15,6 +15,7 @@ import { EditHabit } from './screens/EditHabit';
 import { Me } from './screens/Me';
 import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
+import { HabitStatistics } from './screens/HabitStatistics';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
@@ -72,6 +73,7 @@ function AppLayout() {
           <Route path="/habits/archived" element={<ProtectedRoute><Archive /></ProtectedRoute>} />
           <Route path="/habits/:id" element={<ProtectedRoute><QuickAction /></ProtectedRoute>} />
           <Route path="/habits/:id/history" element={<ProtectedRoute><HabitHistory /></ProtectedRoute>} />
+          <Route path="/habits/:id/statistics" element={<ProtectedRoute><HabitStatistics /></ProtectedRoute>} />
           <Route path="/habits/:id/edit" element={<ProtectedRoute><EditHabit /></ProtectedRoute>} />
           <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
