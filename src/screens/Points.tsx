@@ -8,11 +8,12 @@ import { SketchBox } from '../components/SketchBox';
 import { HandIcon } from '../components/HandIcon';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
+import { daysAgoLocalDate, utcToLocalDate, todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
+import { useAuthContext } from '../context/AuthContext';
 
-function daysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+function localHour(isoUtc: string, tz: string): number {
+  const timeStr = new Intl.DateTimeFormat('sv-SE', { timeZone: tz, timeStyle: 'short' }).format(new Date(isoUtc));
+  return parseInt(timeStr.split(':')[0]);
 }
 
 const PERIOD_TABS = [
@@ -82,12 +83,12 @@ function HeatCell({ v, size = 10 }: { v: number; size?: number }) {
 
 export function Points() {
   const navigate = useNavigate();
+  const { timezone } = useAuthContext();
   const { stats, loading } = useStats();
   const { habits } = useHabits();
   const [period, setPeriod] = useState<Period>('week');
 
-  // Get entries for heatmap per habit (14 weeks back)
-  const from = daysAgo(97);
+  const from = localDayUtcRange(daysAgoLocalDate(97, timezone), timezone).from;
   const { entries } = useEntries({ from });
 
   const activeHabits = habits.filter(h => !h.archived_at).slice(0, 4);
@@ -95,60 +96,59 @@ export function Points() {
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
     entries.filter(e => e.habit_id === habitId).forEach(e => {
-      const d = e.logged_at.slice(0, 10);
+      const d = utcToLocalDate(e.logged_at, timezone);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
     for (let i = 27; i >= 0; i--) {
-      const d = daysAgo(i);
+      const d = daysAgoLocalDate(i, timezone);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;
   }
 
   function buildBars(): { label: string; points: number; today?: boolean }[] {
-    const today = new Date();
+    const dayLabels = ['D','L','M','X','J','V','S'];
     if (period === 'week') {
-      const dayLabels = ['D','L','M','X','J','V','S'];
       return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (6 - i));
-        const dayStr = d.toISOString().slice(0, 10);
-        const pts = entries.filter(e => e.logged_at.slice(0, 10) === dayStr).reduce((s, e) => s + e.points, 0);
-        return { label: dayLabels[d.getDay()], points: pts, today: i === 6 };
+        const localDate = daysAgoLocalDate(6 - i, timezone);
+        const [y, mo, d] = localDate.split('-').map(Number);
+        const dow = new Date(y, mo - 1, d).getDay();
+        const pts = entries.filter(e => utcToLocalDate(e.logged_at, timezone) === localDate).reduce((s, e) => s + e.points, 0);
+        return { label: dayLabels[dow], points: pts, today: i === 6 };
       });
     }
     if (period === 'day') {
       const labels = ['0-4','4-8','8-12','12-16','16-20','20-24'];
-      const todayStr = today.toISOString().slice(0, 10);
+      const todayStr = todayLocalDate(timezone);
+      const nowHour = localHour(new Date().toISOString(), timezone);
       return labels.map((label, i) => {
         const pts = entries
           .filter(e => {
-            const h = new Date(e.logged_at).getHours();
-            return e.logged_at.slice(0, 10) === todayStr && h >= i * 4 && h < (i + 1) * 4;
+            const h = localHour(e.logged_at, timezone);
+            return utcToLocalDate(e.logged_at, timezone) === todayStr && h >= i * 4 && h < (i + 1) * 4;
           })
           .reduce((s, e) => s + e.points, 0);
-        return { label, points: pts, today: i === Math.floor(today.getHours() / 4) };
+        return { label, points: pts, today: i === Math.floor(nowHour / 4) };
       });
     }
     if (period === 'month') {
       return Array.from({ length: 5 }, (_, i) => {
-        const start = new Date(today);
-        start.setDate(start.getDate() - (4 - i) * 7);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 7);
+        const startLocal = daysAgoLocalDate((4 - i) * 7, timezone);
+        const endLocal = i < 4 ? daysAgoLocalDate((3 - i) * 7, timezone) : '9999-12-31';
         const pts = entries.filter(e => {
-          const d = new Date(e.logged_at);
-          return d >= start && d < end;
+          const d = utcToLocalDate(e.logged_at, timezone);
+          return d >= startLocal && d < endLocal;
         }).reduce((s, e) => s + e.points, 0);
         return { label: `s${i + 1}`, points: pts, today: i === 4 };
       });
     }
     // year
     const monthLabels = ['E','F','M','A','M','J','J','A','S','O','N','D'];
+    const currentMonth = parseInt(todayLocalDate(timezone).split('-')[1]) - 1;
     return Array.from({ length: 12 }, (_, m) => {
-      const pts = entries.filter(e => new Date(e.logged_at).getMonth() === m).reduce((s, e) => s + e.points, 0);
-      return { label: monthLabels[m], points: pts, today: m === today.getMonth() };
+      const pts = entries.filter(e => parseInt(utcToLocalDate(e.logged_at, timezone).split('-')[1]) - 1 === m).reduce((s, e) => s + e.points, 0);
+      return { label: monthLabels[m], points: pts, today: m === currentMonth };
     });
   }
 
