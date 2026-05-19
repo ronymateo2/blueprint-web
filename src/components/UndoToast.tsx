@@ -24,7 +24,7 @@ export function UndoToast({ text, onUndo, onDismiss, durationMs = 4000 }: UndoTo
       style={{
         left: 16,
         right: 16,
-        bottom: 90,
+        top: 16,
         border: '1.8px solid var(--ink)',
         borderRadius: 14,
         padding: '10px 14px',
