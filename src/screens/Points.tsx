@@ -43,18 +43,26 @@ function BarChartNew({ bars }: BarChartNewProps) {
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 104, padding: '2px 0' }}>
         {bars.map((b, i) => {
           const h = max === 0 ? 0 : Math.max(3, (b.points / max) * 100);
+          const background = b.today
+            ? 'var(--coral)'
+            : b.points > 0
+              ? 'rgba(42, 42, 42, 0.08)'
+              : 'transparent';
           return (
             <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, height: '100%', justifyContent: 'flex-end' }}>
               {b.points > 0 && (
                 <div className="font-hand" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{b.points}</div>
               )}
-              <div style={{
-                width: '100%', height: `${h}%`,
-                border: '1.6px solid var(--ink)',
-                background: b.today ? 'var(--coral)' : 'transparent',
-                borderRadius: 3,
-                transition: 'height 360ms ease',
-              }} />
+              <div
+                className="chart-bar"
+                style={{
+                  width: '100%', height: `${h}%`,
+                  border: '1.6px solid var(--ink)',
+                  background,
+                  borderRadius: 3,
+                  cursor: 'pointer',
+                }}
+              />
             </div>
           );
         })}
@@ -70,13 +78,17 @@ function BarChartNew({ bars }: BarChartNewProps) {
   );
 }
 
-function HeatCell({ v, size = 10 }: { v: number; size?: number }) {
-  const opacity = v <= 0 ? 0 : 0.15 + v * 0.75;
+function HeatCell({ v, size = 9 }: { v: number; size?: number }) {
+  const opacity = v <= 0 ? 0.25 : 0.4 + v * 0.6;
   return (
     <div style={{
-      width: size, height: size, borderRadius: 2,
-      border: '1px solid var(--ink)',
-      background: v <= 0 ? 'transparent' : `rgba(42,42,42,${opacity})`,
+      width: size,
+      height: size,
+      borderRadius: 1.5,
+      border: '1.0px solid var(--ink)',
+      background: v <= 0 ? 'transparent' : 'var(--coral)',
+      opacity,
+      transition: 'opacity 200ms ease',
     }} />
   );
 }
@@ -103,7 +115,7 @@ export function Points() {
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
-    for (let i = 27; i >= 0; i--) {
+    for (let i = 13; i >= 0; i--) {
       const d = daysAgoLocalDate(i, timezone);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
@@ -163,26 +175,40 @@ export function Points() {
     );
   }
 
-  const xpPct = stats.levelXp / stats.levelNext;
+  const xpPct = stats.levelXp / (stats.levelNext || 1);
   const bars = buildBars();
   const barsTotal = bars.reduce((s, b) => s + b.points, 0);
 
   return (
     <div className="screen">
+      <style>{`
+        .chart-bar {
+          transition: all 200ms ease-in-out;
+        }
+        .chart-bar:hover {
+          background: var(--coral-soft) !important;
+          border-color: var(--coral) !important;
+          transform: scaleY(1.06);
+          transform-origin: bottom;
+        }
+      `}</style>
+
       {/* Header */}
       <div style={{ padding: '14px 18px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Btn onClick={() => navigate('/')} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Hoy</Btn>
+          <Btn onClick={() => navigate('/')} size="sm">
+            <ArrowLeft size={16} /> Hoy
+          </Btn>
         </div>
-        <div className="font-display leading-none flex items-center" style={{ fontSize: 42, marginTop: 4 }}>
-          Puntos <Scribble width={64} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 6, marginTop: -2 }} />
+        <div className="font-display leading-none flex items-center" style={{ fontSize: 34, marginTop: 4 }}>
+          Puntos <Scribble width={50} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 6, marginTop: -2 }} />
         </div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
-          Nivel {stats.level} · {stats.levelNext - stats.levelXp} para nivel {stats.level + 1}
+        <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2 }}>
+          Visualiza tu nivel, racha y hábitos
         </div>
       </div>
 
-      <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 20px' }}>
+      <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 100px' }}>
 
         {/* XP Card */}
         <SketchBox accent padding={16} radius={18}>
@@ -207,15 +233,23 @@ export function Points() {
               </div>
             </div>
           </div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 14, marginTop: 4 }}>
-            nivel {stats.level} · faltan {stats.levelNext - stats.levelXp} pts para nivel {stats.level + 1}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, marginBottom: 2 }}>
+            <span className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
+              nivel {stats.level}
+            </span>
+            <span className="font-mono text-ink-soft" style={{ fontSize: 12 }}>
+              {stats.levelXp} / {stats.levelNext} XP ({Math.round(xpPct * 100)}%)
+            </span>
           </div>
-          <div style={{ marginTop: 8, height: 14, border: '1.6px solid var(--ink)', borderRadius: 7, overflow: 'hidden', background: 'var(--paper)', position: 'relative' }}>
+          <div style={{ height: 14, border: '1.6px solid var(--ink)', borderRadius: 7, overflow: 'hidden', background: 'var(--paper)', position: 'relative' }}>
             <div style={{
               width: `${Math.round(xpPct * 100)}%`,
               height: '100%', background: 'var(--coral)',
               transition: 'width 600ms ease',
             }} />
+          </div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 4 }}>
+            Faltan {stats.levelNext - stats.levelXp} pts para nivel {stats.level + 1}
           </div>
         </SketchBox>
 
@@ -226,7 +260,20 @@ export function Points() {
             { icon: 'bolt',   value: stats.todayPoints,  unit: '',  label: 'hoy',   accent: false },
             { icon: 'target', value: stats.weekPct,      unit: '%', label: 'semana',accent: false },
           ].map((s, i) => (
-            <SketchBox key={i} padding={12} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <SketchBox
+              key={i}
+              padding={12}
+              className="btn-hover"
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 4,
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              }}
+            >
               <HandIcon kind={s.icon} size={22} color={s.accent ? 'var(--coral)' : 'var(--ink)'} />
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                 <span className="font-display" style={{ fontSize: 34, lineHeight: 0.9, letterSpacing: -0.5 }}>{s.value}</span>
@@ -265,8 +312,15 @@ export function Points() {
         {/* Per-habit heatmap */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} className="font-hand text-ink-soft">
-            <span style={{ fontSize: 13 }}>Calor por hábito · 4 semanas</span>
-            <span style={{ fontSize: 12 }}>□ ▤ ▥ ▦ ▩</span>
+            <span style={{ fontSize: 13 }}>Calor por hábito · 2 semanas</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 11, opacity: 0.8 }}>menos</span>
+              <div style={{ width: 8, height: 8, border: '0.8px solid var(--ink)', background: 'transparent', opacity: 0.25, borderRadius: 1.5 }} />
+              <div style={{ width: 8, height: 8, border: '0.8px solid var(--ink)', background: 'var(--coral)', opacity: 0.5, borderRadius: 1.5 }} />
+              <div style={{ width: 8, height: 8, border: '0.8px solid var(--ink)', background: 'var(--coral)', opacity: 0.8, borderRadius: 1.5 }} />
+              <div style={{ width: 8, height: 8, border: '0.8px solid var(--ink)', background: 'var(--coral)', opacity: 1, borderRadius: 1.5 }} />
+              <span style={{ fontSize: 11, opacity: 0.8 }}>más</span>
+            </div>
           </div>
           <SketchBox padding={8} style={{ marginTop: 4 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -276,36 +330,32 @@ export function Points() {
               {visibleHabits.map((h) => {
                 const cells = habitHeatmap(h.id);
                 return (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <HandIcon kind={h.icon} size={16} />
-                    <span className="font-hand" style={{ fontSize: 13, width: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {h.name}
-                    </span>
-                    <div style={{ flex: 1, display: 'grid', gridAutoFlow: 'column', gridTemplateRows: 'repeat(2, 10px)', gridAutoColumns: 10, gap: 3, justifyContent: 'end' }}>
-                      {cells.map((v, i) => <HeatCell key={i} v={v} size={10} />)}
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: '1 1 auto' }}>
+                      <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+                        <HandIcon kind={h.icon} size={16} />
+                      </span>
+                      <span className="font-hand" style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {h.name}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 3, flexShrink: 0, alignItems: 'center' }}>
+                      {cells.map((v, i) => <HeatCell key={i} v={v} size={9} />)}
                     </div>
                   </div>
                 );
               })}
               {shouldTruncate && (
                 <div style={{ borderTop: '1.6px dashed var(--ink-soft)', paddingTop: 8, display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-                  <button
+                  <Btn
                     onClick={() => setShowAll(!showAll)}
-                    className="font-hand text-ink-soft"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: '4px 12px',
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      WebkitTapHighlightColor: 'transparent',
-                    }}
+                    size="xs"
+                    variant="chip"
+                    active={showAll}
+                    style={{ padding: '4px 12px' }}
                   >
                     {showAll ? 'Ver menos ↑' : `Ver todos (${activeHabits.length}) ↓`}
-                  </button>
+                  </Btn>
                 </div>
               )}
             </div>
@@ -316,3 +366,4 @@ export function Points() {
     </div>
   );
 }
+
