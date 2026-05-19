@@ -29,12 +29,6 @@ function formatDayName(localDate: string, tz: string): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long' }).format(noon);
 }
 
-function formatDayShort(localDate: string, tz: string): string {
-  const { from } = localDayUtcRange(localDate, tz);
-  const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
-  return new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' }).format(noon);
-}
-
 function habitSubtitle(h: Habit, todaySum: number): string {
   switch (h.type) {
     case 'count': return todaySum >= h.goal ? 'hecho' : `de ${h.goal} · +${h.points} pts c/u`;
@@ -77,20 +71,20 @@ function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
   return true;
 }
 
-function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
+function MiniBars({ weeklyChart, selectedDate, timezone }: { weeklyChart: number[]; selectedDate: string; timezone: string }) {
   const raw = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
-  const todayDow = new Date().getDay(); // JS: 0=Sun,1=Mon…6=Sat
-  const todayIso = todayDow === 0 ? 6 : todayDow - 1; // 0=Mon…6=Sun
+  const realToday = todayLocalDate(timezone);
+  const selectedIso = (new Date(`${selectedDate}T12:00:00Z`).getDay() + 6) % 7;
+  const mondayDateStr = addDays(selectedDate, -selectedIso);
 
-  // Map each value to its ISO day-of-week slot
-  const slots: { v: number; iso: number }[] = raw.map((v, i) => {
-    const offset = raw.length - 1 - i;
-    const jsDay = (todayDow - offset + 7) % 7;
-    const iso = jsDay === 0 ? 6 : jsDay - 1;
-    return { v, iso };
-  });
-  // Sort Mon→Sun
-  slots.sort((a, b) => a.iso - b.iso);
+  const dateToValue = Object.fromEntries(
+    raw.map((v, i) => [addDays(realToday, i - (raw.length - 1)), v])
+  );
+
+  const slots = Array.from({ length: 7 }, (_, iso) => ({
+    v: dateToValue[addDays(mondayDateStr, iso)] ?? 0,
+    iso
+  }));
 
   const max = Math.max(1, ...slots.map(s => s.v));
 
@@ -101,8 +95,8 @@ function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
           <div key={iso} style={{
             flex: 1,
             height: `${Math.max(14, (v / max) * 100)}%`,
-            background: iso === todayIso ? 'var(--coral)' : 'var(--ink)',
-            opacity: iso === todayIso ? 1 : 0.35,
+            background: iso === selectedIso ? 'var(--coral)' : 'var(--ink)',
+            opacity: iso === selectedIso ? 1 : 0.35,
             borderRadius: 2,
           }} />
         ))}
@@ -113,8 +107,8 @@ function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
             flex: 1,
             textAlign: 'center',
             fontSize: 10,
-            color: iso === todayIso ? 'var(--coral)' : 'var(--ink-soft)',
-            fontWeight: iso === todayIso ? 600 : 400,
+            color: iso === selectedIso ? 'var(--coral)' : 'var(--ink-soft)',
+            fontWeight: iso === selectedIso ? 600 : 400,
           }}>{DAY_LETTERS[iso]}</div>
         ))}
       </div>
@@ -181,6 +175,16 @@ export function Home() {
   function goToday()   { setSelectedDate(realToday); }
 
   const isFuture = selectedDate > realToday;
+  const isYesterday = selectedDate === addDays(realToday, -1);
+  const isTomorrow = selectedDate === addDays(realToday, 1);
+  const isRelativeDay = isToday || isYesterday || isTomorrow;
+  const relativeTitle = isToday
+    ? 'Hoy'
+    : isYesterday
+    ? 'Ayer'
+    : isTomorrow
+    ? 'Mañana'
+    : formatDayName(selectedDate, timezone);
 
   const sumByHabit: Record<string, number> = {};
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
@@ -198,7 +202,11 @@ export function Home() {
     if (logStates[habit.id]) return;
     setLogStates(prev => ({ ...prev, [habit.id]: 'logging' }));
     try {
-      const entry = await api.entries.create({ habit_id: habit.id, value: 1 });
+      const payload: Parameters<typeof api.entries.create>[0] = { habit_id: habit.id, value: 1 };
+      if (!isToday) {
+        payload.logged_at = from;
+      }
+      const entry = await api.entries.create(payload);
       await reloadEntries();
       await reloadStats();
       setLogStates(prev => ({ ...prev, [habit.id]: 'done' }));
@@ -234,53 +242,55 @@ export function Home() {
       {/* Title */}
       <div style={{ padding: '14px 18px 8px' }}>
         <div className="flex items-start justify-between">
-          {isToday ? (
-            <div className="font-display leading-none" style={{ fontSize: 44 }}>
-              Hoy <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4 }} />
+          <div className="flex items-center gap-2">
+            <div className="font-display leading-none" style={{ fontSize: isRelativeDay ? 44 : 38, textTransform: 'capitalize' }}>
+              {relativeTitle}
             </div>
-          ) : (
-            <div>
-              <div className="font-display leading-none" style={{ fontSize: 38, textTransform: 'capitalize' }}>
-                {formatDayName(selectedDate, timezone)}
-              </div>
-              <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 2, textTransform: 'capitalize' }}>
-                {formatDayShort(selectedDate, timezone)}
-              </div>
-            </div>
-          )}
+            {isToday ? (
+              <Scribble width={58} style={{ display: 'inline-block', verticalAlign: 'middle', marginTop: -4, marginLeft: 2 }} />
+            ) : (
+              <button
+                onClick={goToday}
+                className="font-hand cursor-pointer active:scale-95 transition-transform"
+                style={{
+                  border: '1.6px solid var(--coral)',
+                  borderRadius: 999,
+                  background: 'transparent',
+                  color: 'var(--coral)',
+                  fontSize: 12,
+                  padding: '2px 10px',
+                  lineHeight: 1.2,
+                  marginLeft: 8,
+                  marginTop: 6,
+                }}
+              >
+                hoy
+              </button>
+            )}
+          </div>
           <Btn onClick={() => navigate('/habits/new')} style={{ fontSize: 16, padding: '4px 12px', marginTop: 6 }}><PlusIcon size={14} /> nuevo</Btn>
         </div>
 
         {/* Date navigator */}
-        <div className="flex items-center" style={{ marginTop: 6, gap: 4 }}>
+        <div className="flex items-center" style={{ marginTop: 8, gap: 4 }}>
           <button
             onClick={goBack}
-            className="font-hand bg-transparent cursor-pointer"
+            className="font-hand bg-transparent cursor-pointer active:opacity-60 transition-opacity"
             style={{ color: 'var(--ink-soft)', padding: '2px 4px', border: 'none', lineHeight: 1, flexShrink: 0 }}
           ><CaretLeftIcon size={18} /></button>
 
           <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            {isToday ? (
-              <span
-                className="font-hand text-ink-soft"
-                style={{ fontSize: 15, textTransform: 'capitalize', letterSpacing: 0.1 }}
-              >{formatSelectedDate(selectedDate, timezone)}</span>
-            ) : (
-              <button
-                onClick={goToday}
-                className="font-hand cursor-pointer"
-                style={{
-                  border: '1.6px solid var(--coral)', borderRadius: 999,
-                  background: 'transparent', color: 'var(--coral)',
-                  fontSize: 13, padding: '4px 14px', lineHeight: 1.4,
-                }}
-              >← hoy</button>
-            )}
+            <span
+              className="font-hand text-ink-soft"
+              style={{ fontSize: 15, textTransform: 'capitalize', letterSpacing: 0.1 }}
+            >
+              {formatSelectedDate(selectedDate, timezone)}
+            </span>
           </div>
 
           <button
             onClick={goForward}
-            className="font-hand bg-transparent cursor-pointer"
+            className="font-hand bg-transparent cursor-pointer active:opacity-60 transition-opacity"
             style={{ color: 'var(--ink-soft)', padding: '2px 4px', border: 'none', lineHeight: 1, flexShrink: 0 }}
           ><CaretRightIcon size={18} /></button>
         </div>
@@ -288,7 +298,7 @@ export function Home() {
         <div className="font-hand text-ink-soft flex items-center gap-[4px]" style={{ fontSize: 15, marginTop: 4 }}>
           {isToday
             ? <>{displayPoints} pts · racha {stats?.streak ?? 0}d</>
-            : <>{displayPoints > 0 ? `${displayPoints} pts ese día` : `racha ${stats?.streak ?? 0}d`}</>
+            : <>{displayPoints > 0 ? `${displayPoints} pts ese día · racha ${stats?.streak ?? 0}d` : `racha ${stats?.streak ?? 0}d`}</>
           }
           {(stats?.streak ?? 0) >= 3 && <FireIcon size={15} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 2 }} />}
         </div>
@@ -337,22 +347,36 @@ export function Home() {
           )}
         </div>
         <div className="flex-1 flex flex-col gap-[6px]">
-          {!isFuture && (
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
-                {doneHabits}
+          {isFuture ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
+                  0
+                </span>
+                <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
+                  {' / '}{activeHabits.length}
+                </span>
+              </div>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+                hábitos programados
               </span>
-              <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
-                {' / '}{activeHabits.length}
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span className="font-display leading-none" style={{ fontSize: 56, letterSpacing: -1, lineHeight: 0.9 }}>
+                  {doneHabits}
+                </span>
+                <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
+                  {' / '}{activeHabits.length}
+                </span>
+              </div>
+              <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+                hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
               </span>
-            </div>
+            </>
           )}
-          {!isFuture && (
-            <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-              hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
-            </span>
-          )}
-          {isToday && weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} />}
+          {weeklyChart.length > 0 && <MiniBars weeklyChart={weeklyChart} selectedDate={selectedDate} timezone={timezone} />}
         </div>
       </div>
 
@@ -406,10 +430,10 @@ export function Home() {
                 onMouseLeave={cancelLongPress}
                 onClick={() => {
                   if (longPressActive.current) { longPressActive.current = false; return; }
-                  if (isToday) navigate(`/habits/${h.id}`);
+                  if (!isFuture) navigate(`/habits/${h.id}`);
                 }}
                 style={{
-                  cursor: isToday ? 'pointer' : 'default',
+                  cursor: !isFuture ? 'pointer' : 'default',
                   WebkitTapHighlightColor: 'transparent',
                   transition: 'opacity 160ms',
                   userSelect: 'none',
@@ -443,11 +467,11 @@ export function Home() {
 
                   {/* Tap-to-log area */}
                   <div
-                    onClick={isToday ? (e) => { void logHabit(h, e); } : undefined}
+                    onClick={!isFuture ? (e) => { void logHabit(h, e); } : undefined}
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
-                      opacity: isToday ? 1 : 0.35,
-                      pointerEvents: isToday ? 'auto' : 'none',
+                      opacity: !isFuture ? 1 : 0.35,
+                      pointerEvents: !isFuture ? 'auto' : 'none',
                     }}
                   >
                     <div
