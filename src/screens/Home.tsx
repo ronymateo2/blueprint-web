@@ -9,7 +9,6 @@ import { api, type Habit } from '../api/client';
 import { Ring } from '../components/Ring';
 import { IconTile } from '../components/IconTile';
 import { SketchBox } from '../components/SketchBox';
-import { UndoToast } from '../components/UndoToast';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
@@ -87,7 +86,7 @@ export function Home() {
   const today = todayLocalDate(timezone);
   const { from, to } = localDayUtcRange(today, timezone);
   const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
-  const { toast, show: showToast, dismiss, handleUndo } = useUndo();
+  const { show: showToast } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
 
@@ -307,7 +306,6 @@ export function Home() {
         <div style={{ height: 20 }} />
       </div>
 
-      {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
     </div>
   );
 }

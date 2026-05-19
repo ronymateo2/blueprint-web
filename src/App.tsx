@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Toaster } from 'sonner';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { NavProvider, useNavDirection, type NavDirection } from './context/NavContext';
 import { TabBar } from './components/TabBar';
@@ -88,6 +89,32 @@ export function App() {
         <NavProvider>
           <AppLayout />
         </NavProvider>
+        <Toaster
+          position="top-center"
+          duration={4000}
+          toastOptions={{
+            style: {
+              background: 'var(--color-paper-2)',
+              color: 'var(--color-ink)',
+              border: '1.8px solid var(--color-ink)',
+              borderRadius: '14px',
+              boxShadow: '2px 3px 0 rgba(0,0,0,0.08)',
+              fontFamily: 'var(--font-hand)',
+              fontSize: '17px',
+              padding: '10px 14px',
+            },
+            actionButtonStyle: {
+              background: 'transparent',
+              color: 'var(--color-coral)',
+              border: '1.5px solid var(--color-coral)',
+              borderRadius: '999px',
+              fontFamily: 'var(--font-hand)',
+              fontSize: '14px',
+              padding: '4px 12px',
+              cursor: 'pointer',
+            },
+          }}
+        />
       </BrowserRouter>
     </AuthProvider>
   );

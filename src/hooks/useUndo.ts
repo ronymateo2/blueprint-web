@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 interface UndoItem {
   id: string;
@@ -7,19 +8,16 @@ interface UndoItem {
 }
 
 export function useUndo() {
-  const [toast, setToast] = useState<UndoItem | null>(null);
-
   const show = useCallback((item: UndoItem) => {
-    setToast(item);
+    toast(`Registrado · ${item.text}`, {
+      id: item.id,
+      duration: 4000,
+      action: {
+        label: 'Deshacer',
+        onClick: item.onUndo,
+      },
+    });
   }, []);
 
-  const dismiss = useCallback(() => setToast(null), []);
-
-  const handleUndo = useCallback(async () => {
-    if (!toast) return;
-    await toast.onUndo();
-    setToast(null);
-  }, [toast]);
-
-  return { toast, show, dismiss, handleUndo };
+  return { show };
 }

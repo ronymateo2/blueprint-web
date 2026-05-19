@@ -7,7 +7,6 @@ import { api, type Entry } from '../api/client';
 import { Ring } from '../components/Ring';
 import { HandIcon } from '../components/HandIcon';
 import { IconTile } from '../components/IconTile';
-import { UndoToast } from '../components/UndoToast';
 import { BottomSheet } from '../components/BottomSheet';
 import { Btn } from '../components/Btn';
 import { useHabits } from '../hooks/useHabits';
@@ -186,7 +185,7 @@ export function QuickAction() {
   const { from, to } = localDayUtcRange(today, timezone);
 
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
-  const { toast, show: showToast, dismiss, handleUndo } = useUndo();
+  const { show: showToast } = useUndo();
   const [moreOpen, setMoreOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [editEntry, setEditEntry] = useState<Entry | null>(null);
@@ -401,7 +400,6 @@ export function QuickAction() {
         )}
       </BottomSheet>
 
-      {toast && <UndoToast key={toast.id} text={toast.text} onUndo={handleUndo} onDismiss={dismiss} />}
     </div>
   );
 }
