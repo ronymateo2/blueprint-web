@@ -87,11 +87,14 @@ export function Points() {
   const { stats, loading } = useStats();
   const { habits } = useHabits();
   const [period, setPeriod] = useState<Period>('week');
+  const [showAll, setShowAll] = useState(false);
 
   const from = localDayUtcRange(daysAgoLocalDate(97, timezone), timezone).from;
   const { entries } = useEntries({ from });
 
-  const activeHabits = habits.filter(h => !h.archived_at).slice(0, 4);
+  const activeHabits = habits.filter(h => !h.archived_at);
+  const shouldTruncate = activeHabits.length > 5;
+  const visibleHabits = shouldTruncate && !showAll ? activeHabits.slice(0, 4) : activeHabits;
 
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
@@ -270,7 +273,7 @@ export function Points() {
               {activeHabits.length === 0 && (
                 <div className="font-hand text-ink-soft" style={{ fontSize: 13, padding: 8 }}>· sin hábitos activos</div>
               )}
-              {activeHabits.map((h) => {
+              {visibleHabits.map((h) => {
                 const cells = habitHeatmap(h.id);
                 return (
                   <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -284,6 +287,27 @@ export function Points() {
                   </div>
                 );
               })}
+              {shouldTruncate && (
+                <div style={{ borderTop: '1.6px dashed var(--ink-soft)', paddingTop: 8, display: 'flex', justifyContent: 'center', marginTop: 4 }}>
+                  <button
+                    onClick={() => setShowAll(!showAll)}
+                    className="font-hand text-ink-soft"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '4px 12px',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
+                  >
+                    {showAll ? 'Ver menos ↑' : `Ver todos (${activeHabits.length}) ↓`}
+                  </button>
+                </div>
+              )}
             </div>
           </SketchBox>
         </div>
