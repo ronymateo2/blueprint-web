@@ -3,26 +3,28 @@ import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { HandIcon } from '../components/HandIcon';
 import { daysAgoLocalDate, utcToLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
+import { useAuthContext } from '../context/AuthContext';
 
 const TABS = ['Día', 'Semana', 'Mes', 'Año'];
 
 export function History() {
   const [activeTab, setActiveTab] = useState(1);
+  const { timezone } = useAuthContext();
   const { habits } = useHabits();
   const tabDays = [0, 6, 29, 364];
-  const from = localDayUtcRange(daysAgoLocalDate(tabDays[activeTab])).from;
+  const from = localDayUtcRange(daysAgoLocalDate(tabDays[activeTab], timezone), timezone).from;
   const { entries: recentEntries } = useEntries({ from });
-  const { entries: heatmapEntries } = useEntries({ from: localDayUtcRange(daysAgoLocalDate(97)).from });
+  const { entries: heatmapEntries } = useEntries({ from: localDayUtcRange(daysAgoLocalDate(97, timezone), timezone).from });
 
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
     heatmapEntries.filter((e) => e.habit_id === habitId).forEach((e) => {
-      const d = utcToLocalDate(e.logged_at);
+      const d = utcToLocalDate(e.logged_at, timezone);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
     for (let i = 97; i >= 0; i--) {
-      const d = daysAgoLocalDate(i);
+      const d = daysAgoLocalDate(i, timezone);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;
@@ -95,7 +97,7 @@ export function History() {
                 fontSize: 17,
                 padding: '6px 0', borderBottom: '1px dashed var(--ink-soft)',
               }}>
-                <span className="text-ink-soft" style={{ width: 48 }}>{formatTime(e.logged_at)}</span>
+                <span className="text-ink-soft" style={{ width: 48 }}>{formatTime(e.logged_at, timezone)}</span>
                 <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap" style={{ marginLeft: 10 }}>
                   {e.habit_name ?? 'Hábito'} {e.value > 1 ? `+${e.value}` : '+1'}
                 </span>

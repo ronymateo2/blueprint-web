@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FireIcon, CaretRight } from '@phosphor-icons/react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthContext } from '../context/AuthContext';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
 import { api, type Habit } from '../api/client';
@@ -46,7 +46,7 @@ function SettingsRow({
 }
 
 export function Me() {
-  const { user, logout, reload } = useAuth();
+  const { user, logout, setUser } = useAuthContext();
   const { stats } = useStats();
   const { habits } = useHabits();
   const navigate = useNavigate();
@@ -67,8 +67,9 @@ export function Me() {
 
   async function saveTz() {
     setSaving(true);
-    await api.auth.patchMe({ timezone: tz });
-    await reload();
+    const result = await api.auth.patchMe({ timezone: tz });
+    if (result.token) localStorage.setItem('habit_token', result.token);
+    setUser({ ...user!, timezone: tz });
     setSaving(false);
     setEditingTz(false);
   }

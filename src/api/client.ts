@@ -87,7 +87,7 @@ export const api = {
   auth: {
     googleUrl: () => `${BASE}/api/auth/google`,
     me: () => req<User>('GET', '/api/auth/me'),
-    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User>('PATCH', '/api/auth/me', data),
+    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User & { token?: string }>('PATCH', '/api/auth/me', data),
   },
 
   habits: {

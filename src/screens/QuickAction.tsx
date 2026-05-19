@@ -12,6 +12,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { Btn } from '../components/Btn';
 import { useHabits } from '../hooks/useHabits';
 import { todayLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
+import { useAuthContext } from '../context/AuthContext';
 
 function relTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 60000;
@@ -75,18 +76,19 @@ interface EditEntrySheetProps {
   habit: ReturnType<typeof useHabits>['habits'][number];
   entry: Entry;
   amount: number;
+  timezone: string;
   onAmountChange: (v: number) => void;
   onSave: () => Promise<void>;
   onDelete: () => Promise<void>;
   onClose: () => void;
 }
 
-function EditEntrySheet({ habit, entry, amount, onAmountChange, onSave, onDelete, onClose }: EditEntrySheetProps) {
+function EditEntrySheet({ habit, entry, amount, timezone, onAmountChange, onSave, onDelete, onClose }: EditEntrySheetProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="font-display" style={{ fontSize: 28 }}>Editar registro</div>
       <div className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
-        {habit.name} · {formatTime(entry.logged_at)}
+        {habit.name} · {formatTime(entry.logged_at, timezone)}
       </div>
       {habit.type !== 'yn' && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px' }}>
@@ -177,10 +179,11 @@ function ActionMenuRow({ icon, label, onTap, danger }: { icon: string; label: st
 export function QuickAction() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { timezone } = useAuthContext();
   const { habits } = useHabits();
   const habit = habits.find((h) => h.id === id);
-  const today = todayLocalDate();
-  const { from, to } = localDayUtcRange(today);
+  const today = todayLocalDate(timezone);
+  const { from, to } = localDayUtcRange(today, timezone);
 
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
@@ -352,7 +355,7 @@ export function QuickAction() {
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      · {formatTime(e.logged_at)} —{' '}
+                      · {formatTime(e.logged_at, timezone)} —{' '}
                       {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
                     </span>
                     <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>
@@ -389,6 +392,7 @@ export function QuickAction() {
             habit={habit}
             entry={editEntry}
             amount={editAmount}
+            timezone={timezone}
             onAmountChange={setEditAmount}
             onSave={saveEntryEdit}
             onDelete={deleteEntryEdit}

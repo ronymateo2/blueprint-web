@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuth } from './hooks/useAuth';
+import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { NavProvider, useNavDirection, type NavDirection } from './context/NavContext';
 import { TabBar } from './components/TabBar';
 import { Login } from './screens/Login';
@@ -16,7 +16,7 @@ import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthContext();
   if (loading) return (
     <div className="flex items-center justify-center h-[100dvh] font-hand text-ink-soft">
       Cargando…
@@ -83,10 +83,12 @@ function AppLayout() {
 
 export function App() {
   return (
-    <BrowserRouter>
-      <NavProvider>
-        <AppLayout />
-      </NavProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <NavProvider>
+          <AppLayout />
+        </NavProvider>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

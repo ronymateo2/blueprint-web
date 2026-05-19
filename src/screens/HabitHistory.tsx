@@ -5,6 +5,7 @@ import { useEntries } from '../hooks/useEntries';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
 import { daysAgoLocalDate, utcToLocalDate, formatTime } from '../lib/dateUtils';
+import { useAuthContext } from '../context/AuthContext';
 
 function formatDateHeader(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
@@ -25,6 +26,7 @@ function formatSinceDate(dateStr: string): string {
 export function HabitHistory() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { timezone } = useAuthContext();
   const { habits } = useHabits();
   const habit = habits.find((h) => h.id === id);
 
@@ -35,12 +37,12 @@ export function HabitHistory() {
   const heatmapData = (() => {
     const byDay: Record<string, number> = {};
     entries.forEach((e) => {
-      const d = utcToLocalDate(e.logged_at);
+      const d = utcToLocalDate(e.logged_at, timezone);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
     for (let i = 97; i >= 0; i--) {
-      const d = daysAgoLocalDate(i);
+      const d = daysAgoLocalDate(i, timezone);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;
@@ -50,7 +52,7 @@ export function HabitHistory() {
   // Group entries by date, sorted desc
   const byDate: Record<string, typeof entries> = {};
   entries.forEach((e) => {
-    const d = utcToLocalDate(e.logged_at);
+    const d = utcToLocalDate(e.logged_at, timezone);
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(e);
   });
@@ -63,7 +65,7 @@ export function HabitHistory() {
 
   const totalEntries = entries.length;
   const sinceDate = entries.length > 0
-    ? utcToLocalDate([...entries].sort((a, b) => a.logged_at.localeCompare(b.logged_at))[0].logged_at)
+    ? utcToLocalDate([...entries].sort((a, b) => a.logged_at.localeCompare(b.logged_at))[0].logged_at, timezone)
     : null;
 
   if (!habit) {
@@ -155,7 +157,7 @@ export function HabitHistory() {
                       borderBottom: '1px dashed var(--ink-soft)',
                     }}
                   >
-                    <span>· {formatTime(e.logged_at)} – +{e.value}</span>
+                    <span>· {formatTime(e.logged_at, timezone)} – +{e.value}</span>
                     <span className="text-ink-soft">+{e.points} pts</span>
                   </div>
                 ))}

@@ -25,7 +25,7 @@ export function TabBar() {
   const activeIndex = TABS.findIndex(t => t.id === activeId);
 
   return (
-    <div className="flex justify-around bg-paper shrink-0" style={{ borderTop: '1.8px solid var(--ink)', padding: '8px 12px 18px' }}>
+    <div className="flex justify-around bg-paper shrink-0" style={{ borderTop: '1.8px solid var(--ink)', padding: '8px 0px 6px' }}>
       {TABS.map((tab, idx) => {
         const isActive = tab.id === activeId;
         return (
@@ -37,10 +37,10 @@ export function TabBar() {
               navigate(tab.path);
             }}
             className={`flex flex-col items-center gap-[2px] bg-transparent border-none cursor-pointer font-hand text-ink ${isActive ? 'opacity-100' : 'opacity-45'}`}
-            style={{ padding: '2px 8px', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+            style={{ padding: '2px 2px', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
           >
             <HandIcon kind={tab.icon} size={20} />
-            <span style={{ fontSize: 12 }}>{tab.label}</span>
+            <span style={{ fontSize: 14 }}>{tab.label}</span>
             <Scribble width={28} strokeWidth={2} style={{ opacity: isActive ? 1 : 0 }} />
           </button>
         );
