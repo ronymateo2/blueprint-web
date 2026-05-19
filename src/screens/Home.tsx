@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -131,6 +131,7 @@ export function Home() {
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressActive = useRef(false);
@@ -190,7 +191,9 @@ export function Home() {
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
 
   const activeHabits = habits.filter(h => !h.archived_at && isHabitDueOnDate(h, selectedDate, timezone));
-  const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
+  const pendingHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) < h.goal);
+  const completedHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal);
+  const doneHabits = completedHabits.length;
   const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
   const totalPossiblePoints = activeHabits.reduce((s, h) => s + h.points * h.goal, 0);
   const selectedDatePoints = entries.reduce((sum, e) => sum + e.points, 0);
@@ -383,7 +386,7 @@ export function Home() {
       {/* Habit list */}
       <div
         className="screen-scroll flex flex-col gap-[10px]"
-        style={{ padding: '4px 14px 14px' }}
+        style={{ padding: '4px 14px 100px' }}
         onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
           if (touchStartX.current === null) return;
@@ -408,104 +411,159 @@ export function Home() {
             )}
           </SketchBox>
         ) : (
-          activeHabits.map((h) => {
-            const sum = sumByHabit[h.id] ?? 0;
-            const done = sum >= h.goal;
-            const state = logStates[h.id];
-            const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
-            const valueLabel = isFuture
-              ? '—'
-              : h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" /> : '0')
-              : h.type === 'time' ? `${sum}′`
-              : `${sum}`;
+          (() => {
+            const renderHabitCard = (h: Habit) => {
+              const sum = sumByHabit[h.id] ?? 0;
+              const done = sum >= h.goal;
+              const state = logStates[h.id];
+              const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
+              const valueLabel = isFuture
+                ? '—'
+                : h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : '0')
+                : h.type === 'time' ? `${sum}′`
+                : `${sum}`;
 
-            return (
-              <div
-                key={h.id}
-                onTouchStart={() => startLongPress(h)}
-                onTouchEnd={cancelLongPress}
-                onTouchMove={cancelLongPress}
-                onMouseDown={() => startLongPress(h)}
-                onMouseUp={cancelLongPress}
-                onMouseLeave={cancelLongPress}
-                onClick={() => {
-                  if (longPressActive.current) { longPressActive.current = false; return; }
-                  if (!isFuture) navigate(`/habits/${h.id}`);
-                }}
-                style={{
-                  cursor: !isFuture ? 'pointer' : 'default',
-                  WebkitTapHighlightColor: 'transparent',
-                  transition: 'opacity 160ms',
-                  userSelect: 'none',
-                  WebkitUserSelect: 'none',
-                }}
-              >
-                <SketchBox
-                  padding={14}
-                  radius={16}
+              return (
+                <div
+                  key={h.id}
+                  onTouchStart={() => startLongPress(h)}
+                  onTouchEnd={cancelLongPress}
+                  onTouchMove={cancelLongPress}
+                  onMouseDown={() => startLongPress(h)}
+                  onMouseUp={cancelLongPress}
+                  onMouseLeave={cancelLongPress}
+                  onClick={() => {
+                    if (longPressActive.current) { longPressActive.current = false; return; }
+                    if (!isFuture) navigate(`/habits/${h.id}`);
+                  }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    opacity: done ? 0.62 : 1,
-                    background: done ? 'rgba(255,255,255,0.4)' : 'transparent',
+                    cursor: !isFuture ? 'pointer' : 'default',
+                    WebkitTapHighlightColor: 'transparent',
+                    transition: 'opacity 160ms',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    animation: 'fadeIn 0.22s ease-out',
                   }}
                 >
-                  <IconTile kind={h.icon} size={50} />
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className="font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap"
-                      style={{
-                        fontSize: 28,
-                        textDecoration: done ? 'line-through' : 'none',
-                      }}
-                    >
-                      {h.name}
-                    </div>
-                    <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 4 }}>
-                      {habitSubtitle(h, sum)}
-                    </div>
-                  </div>
-
-                  {/* Tap-to-log area */}
-                  <div
-                    onClick={!isFuture ? (e) => { void logHabit(h, e); } : undefined}
+                  <SketchBox
+                    padding={14}
+                    radius={16}
                     style={{
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
-                      opacity: !isFuture ? 1 : 0.35,
-                      pointerEvents: !isFuture ? 'auto' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      opacity: done ? 0.62 : 1,
+                      background: done ? 'rgba(255,255,255,0.4)' : 'transparent',
                     }}
                   >
+                    <IconTile kind={h.icon} size={50} />
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className="font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap"
+                        style={{
+                          fontSize: 28,
+                          textDecoration: done ? 'line-through' : 'none',
+                        }}
+                      >
+                        {h.name}
+                      </div>
+                      <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 4 }}>
+                        {habitSubtitle(h, sum)}
+                      </div>
+                    </div>
+
+                    {/* Tap-to-log area */}
                     <div
-                      className="font-display"
+                      onClick={!isFuture ? (e) => { void logHabit(h, e); } : undefined}
                       style={{
-                        fontSize: 38,
-                        lineHeight: 0.95,
-                        letterSpacing: -0.5,
-                        color: done ? 'var(--ink-soft)' : (sum > 0 ? 'var(--coral)' : 'var(--ink)'),
-                        textAlign: 'center',
-                        minWidth: 36,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
+                        opacity: !isFuture ? 1 : 0.35,
+                        pointerEvents: !isFuture ? 'auto' : 'none',
                       }}
                     >
-                      {state === 'logging' ? '…' : state === 'done' ? <CheckIcon size={28} weight="bold" /> : valueLabel}
-                    </div>
-                    {h.type !== 'yn' && !isFuture && (
-                      <div style={{
-                        width: 44, height: 5, borderRadius: 999,
-                        border: '1px solid var(--ink)', overflow: 'hidden',
-                        background: 'var(--paper)',
-                      }}>
-                        <div style={{
-                          width: `${Math.min(100, ringValue * 100)}%`,
-                          height: '100%',
-                          background: done ? 'var(--ink-soft)' : 'var(--coral)',
-                          transition: 'width 320ms ease',
-                        }} />
+                      <div
+                        className="font-display"
+                        style={{
+                          fontSize: 38,
+                          lineHeight: 0.95,
+                          letterSpacing: -0.5,
+                          color: done ? 'var(--ink-soft)' : (sum > 0 ? 'var(--coral)' : 'var(--ink)'),
+                          textAlign: 'center',
+                          minWidth: 36,
+                        }}
+                      >
+                        {state === 'logging' ? '…' : state === 'done' ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : valueLabel}
                       </div>
-                    )}
-                  </div>
-                </SketchBox>
-              </div>
+                      {h.type !== 'yn' && !isFuture && (
+                        <div style={{
+                          width: 44, height: 5, borderRadius: 999,
+                          border: '1px solid var(--ink)', overflow: 'hidden',
+                          background: 'var(--paper)',
+                        }}>
+                          <div style={{
+                            width: `${Math.min(100, ringValue * 100)}%`,
+                            height: '100%',
+                            background: done ? 'var(--ink-soft)' : 'var(--coral)',
+                            transition: 'width 320ms ease',
+                          }} />
+                        </div>
+                      )}
+                    </div>
+                  </SketchBox>
+                </div>
+              );
+            };
+
+            return (
+              <>
+                {pendingHabits.map(renderHabitCard)}
+
+                {completedHabits.length > 0 && (
+                  <>
+                    <div style={{ borderTop: '1.5px dashed var(--ink-soft)', margin: '6px 4px' }} />
+                    <button
+                      onClick={() => setCompletedExpanded(!completedExpanded)}
+                      className="font-display active:scale-98 transition-transform cursor-pointer flex items-center justify-between"
+                      style={{
+                        WebkitTapHighlightColor: 'transparent',
+                        fontSize: 24,
+                        color: 'var(--ink)',
+                        padding: '6px 4px',
+                        width: '100%',
+                        textAlign: 'left',
+                        border: 'none',
+                        background: 'none',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                      }}
+                    >
+                      <span>
+                        {doneHabits} {doneHabits === 1 ? 'completado' : 'completados'}
+                      </span>
+                      <CaretDownIcon
+                        size={18}
+                        style={{
+                          color: 'var(--ink-soft)',
+                          transform: completedExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.25s ease-in-out',
+                        }}
+                      />
+                    </button>
+                    <div
+                      style={{
+                        maxHeight: completedExpanded ? '1000px' : '0px',
+                        opacity: completedExpanded ? 1 : 0,
+                        transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
+                        overflow: completedExpanded ? 'visible' : 'hidden',
+                      }}
+                    >
+                      <div className="flex flex-col gap-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                        {completedHabits.map(renderHabitCard)}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
             );
-          })
+          })()
         )}
         <div style={{ height: 20 }} />
       </div>
