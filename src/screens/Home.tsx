@@ -82,10 +82,10 @@ export function Home() {
   const navigate = useNavigate();
   const { timezone } = useAuthContext();
   const { habits, loading: habitsLoading } = useHabits();
-  const { stats, reload: reloadStats } = useStats();
+  const { stats, loading: statsLoading, reload: reloadStats } = useStats();
   const today = todayLocalDate(timezone);
   const { from, to } = localDayUtcRange(today, timezone);
-  const { entries, reload: reloadEntries } = useEntries({ from, to });
+  const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
 
@@ -123,6 +123,14 @@ export function Home() {
   }
 
   const weeklyChart = stats?.weeklyChart ?? [];
+
+  if (habitsLoading || statsLoading || entriesLoading) {
+    return (
+      <div className="screen items-center justify-center">
+        <span className="font-hand text-ink-soft">Cargando…</span>
+      </div>
+    );
+  }
 
   return (
     <div className="screen">
@@ -174,9 +182,7 @@ export function Home() {
 
       {/* Habit list */}
       <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 14px' }}>
-        {habitsLoading ? (
-          <div className="font-hand text-ink-soft text-center" style={{ padding: 20 }}>Cargando…</div>
-        ) : activeHabits.length === 0 ? (
+        {activeHabits.length === 0 ? (
           <SketchBox dashed padding={20} style={{ textAlign: 'center', marginTop: 20 }}>
             <div className="font-display" style={{ fontSize: 26, marginBottom: 4 }}>Sin hábitos todavía</div>
             <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginBottom: 12 }}>Empieza creando uno nuevo</div>
