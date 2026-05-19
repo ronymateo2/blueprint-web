@@ -2,35 +2,27 @@ import { useState } from 'react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { HandIcon } from '../components/HandIcon';
+import { daysAgoLocalDate, utcToLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
 
 const TABS = ['Día', 'Semana', 'Mes', 'Año'];
-
-function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
-}
-
-function daysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
 
 export function History() {
   const [activeTab, setActiveTab] = useState(1);
   const { habits } = useHabits();
-  const from = activeTab === 0 ? daysAgo(0) : activeTab === 1 ? daysAgo(6) : activeTab === 2 ? daysAgo(29) : daysAgo(364);
+  const tabDays = [0, 6, 29, 364];
+  const from = localDayUtcRange(daysAgoLocalDate(tabDays[activeTab])).from;
   const { entries: recentEntries } = useEntries({ from });
-  const { entries: heatmapEntries } = useEntries({ from: daysAgo(97) });
+  const { entries: heatmapEntries } = useEntries({ from: localDayUtcRange(daysAgoLocalDate(97)).from });
 
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
     heatmapEntries.filter((e) => e.habit_id === habitId).forEach((e) => {
-      const d = e.logged_at.slice(0, 10);
+      const d = utcToLocalDate(e.logged_at);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
     for (let i = 97; i >= 0; i--) {
-      const d = daysAgo(i);
+      const d = daysAgoLocalDate(i);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;

@@ -12,13 +12,10 @@ import { SketchBox } from '../components/SketchBox';
 import { UndoToast } from '../components/UndoToast';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
+import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
 
 function formatDate(): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(new Date());
-}
-
-function todayLocal(): string {
-  return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date());
 }
 
 function habitSubtitle(h: Habit, todaySum: number): string {
@@ -83,9 +80,11 @@ function MiniBars({ weeklyChart }: { weeklyChart: number[] }) {
 export function Home() {
   const navigate = useNavigate();
   const { habits, loading: habitsLoading } = useHabits();
-  const today = todayLocal();
-  const { entries, reload: reloadEntries } = useEntries({ from: today, to: today + 'T23:59:59Z' });
   const { stats, reload: reloadStats } = useStats();
+  const tz = stats?.timezone;
+  const today = todayLocalDate(tz);
+  const { from, to } = localDayUtcRange(today, tz);
+  const { entries, reload: reloadEntries } = useEntries({ from, to });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done'>>({});
 

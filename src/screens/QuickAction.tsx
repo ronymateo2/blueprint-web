@@ -11,10 +11,7 @@ import { UndoToast } from '../components/UndoToast';
 import { BottomSheet } from '../components/BottomSheet';
 import { Btn } from '../components/Btn';
 import { useHabits } from '../hooks/useHabits';
-
-function todayLocal(): string {
-  return new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short' }).format(new Date());
-}
+import { todayLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
 
 function relTime(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 60000;
@@ -23,10 +20,6 @@ function relTime(iso: string): string {
   const h = Math.floor(diff / 60);
   if (h < 24) return `hace ${h}h`;
   return `hace ${Math.floor(h / 24)}d`;
-}
-
-function shortTime(iso: string): string {
-  return new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 }
 
 function typeLabel(type: string): string {
@@ -93,7 +86,7 @@ function EditEntrySheet({ habit, entry, amount, onAmountChange, onSave, onDelete
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div className="font-display" style={{ fontSize: 28 }}>Editar registro</div>
       <div className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
-        {habit.name} · {shortTime(entry.logged_at)}
+        {habit.name} · {formatTime(entry.logged_at)}
       </div>
       {habit.type !== 'yn' && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px' }}>
@@ -186,9 +179,10 @@ export function QuickAction() {
   const navigate = useNavigate();
   const { habits } = useHabits();
   const habit = habits.find((h) => h.id === id);
-  const today = todayLocal();
+  const today = todayLocalDate();
+  const { from, to } = localDayUtcRange(today);
 
-  const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from: today, to: today + 'T23:59:59Z' });
+  const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
   const { toast, show: showToast, dismiss, handleUndo } = useUndo();
   const [moreOpen, setMoreOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
@@ -358,7 +352,7 @@ export function QuickAction() {
                     }}
                   >
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      · {shortTime(e.logged_at)} —{' '}
+                      · {formatTime(e.logged_at)} —{' '}
                       {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
                     </span>
                     <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>

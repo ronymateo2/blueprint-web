@@ -4,16 +4,7 @@ import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { Scribble } from '../components/Scribble';
 import { Btn } from '../components/Btn';
-
-function daysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
-
-function formatTime(iso: string): string {
-  return new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
-}
+import { daysAgoLocalDate, utcToLocalDate, formatTime } from '../lib/dateUtils';
 
 function formatDateHeader(dateStr: string): string {
   const d = new Date(dateStr + 'T12:00:00');
@@ -44,12 +35,12 @@ export function HabitHistory() {
   const heatmapData = (() => {
     const byDay: Record<string, number> = {};
     entries.forEach((e) => {
-      const d = e.logged_at.slice(0, 10);
+      const d = utcToLocalDate(e.logged_at);
       byDay[d] = (byDay[d] ?? 0) + 1;
     });
     const vals: number[] = [];
     for (let i = 97; i >= 0; i--) {
-      const d = daysAgo(i);
+      const d = daysAgoLocalDate(i);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;
@@ -59,7 +50,7 @@ export function HabitHistory() {
   // Group entries by date, sorted desc
   const byDate: Record<string, typeof entries> = {};
   entries.forEach((e) => {
-    const d = e.logged_at.slice(0, 10);
+    const d = utcToLocalDate(e.logged_at);
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push(e);
   });
@@ -72,7 +63,7 @@ export function HabitHistory() {
 
   const totalEntries = entries.length;
   const sinceDate = entries.length > 0
-    ? [...entries].sort((a, b) => a.logged_at.localeCompare(b.logged_at))[0].logged_at.slice(0, 10)
+    ? utcToLocalDate([...entries].sort((a, b) => a.logged_at.localeCompare(b.logged_at))[0].logged_at)
     : null;
 
   if (!habit) {

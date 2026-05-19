@@ -7,6 +7,7 @@ export const ICONS = [
   'dish','water','run','pill','book','mug','sun','moon','fire','star',
   'leaf','bolt','clock','target','dumb','bell','heart','music','phone','plus',
   'walk','wash','shower',
+  'avocado','cow','strategy',
 ];
 
 export const TYPES = [
