@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, type Habit } from '../api/client';
-import { HabitForm, type HabitFormValues, type HabitType } from './HabitForm';
+import { HabitForm, type HabitFormValues, type HabitType, type ReminderDraft } from './HabitForm';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { HABITS_KEY } from '../hooks/useHabits';
 
@@ -10,6 +10,12 @@ function apiTypeToDesign(t: Habit['type']): HabitType {
   if (t === 'time') return 'time';
   if (t === 'yn') return 'yn';
   return 'count';
+}
+
+function toReminderDraft(r: { time: string; days: string; enabled: number }): ReminderDraft {
+  let days: string[];
+  try { days = JSON.parse(r.days) as string[]; } catch { days = ['L','M','X','J','V','S','D']; }
+  return { time: r.time, days, enabled: Boolean(r.enabled) };
 }
 
 export function EditHabit() {
@@ -25,7 +31,7 @@ export function EditHabit() {
   }, [id]);
 
   async function save(values: HabitFormValues) {
-    if (!id) return;
+    if (!id || !habit) return;
     await api.habits.update(id, {
       name: values.name, icon: values.icon,
       type: values.type === 'time' ? 'time' : values.type === 'yn' ? 'yn' : 'count',
@@ -35,6 +41,10 @@ export function EditHabit() {
       start_date: values.start_date,
       end_date: values.end_date,
     });
+    await Promise.all(habit.reminders.map(r => api.reminders.delete(r.id)));
+    await Promise.all((values.reminders ?? []).map(r =>
+      api.reminders.create(id, { time: r.time, days: JSON.stringify(r.days), enabled: r.enabled ? 1 : 0 })
+    ));
     await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
     navigate(-1);
   }
@@ -58,6 +68,7 @@ export function EditHabit() {
     <HabitForm
       navTitle="Editar hábito"
       saveLabel="guardar"
+      defaultReminders={habit.reminders.map(toReminderDraft)}
       defaultValues={{
         name: habit.name,
         icon: habit.icon,

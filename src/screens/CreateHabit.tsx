@@ -10,7 +10,7 @@ export function CreateHabit() {
   const queryClient = useQueryClient();
 
   async function save(values: HabitFormValues) {
-    await api.habits.create({
+    const habit = await api.habits.create({
       name: values.name, icon: values.icon,
       type: values.type === 'time' ? 'time' : values.type === 'yn' ? 'yn' : 'count',
       goal: values.goal, unit: null, points: values.pts, sort_order: 0,
@@ -19,6 +19,11 @@ export function CreateHabit() {
       start_date: values.start_date,
       end_date: values.end_date,
     });
+    if (values.reminders && values.reminders.length > 0) {
+      await Promise.all(values.reminders.map(r =>
+        api.reminders.create(habit.id, { time: r.time, days: JSON.stringify(r.days), enabled: r.enabled ? 1 : 0 })
+      ));
+    }
     await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
     navigate('/', { replace: true });
   }

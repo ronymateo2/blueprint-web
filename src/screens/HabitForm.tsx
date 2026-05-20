@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
+import { ArrowLeft, Plus, Minus, X, Bell } from '@phosphor-icons/react';
 import { HandIcon } from '../components/HandIcon';
 import { Btn } from '../components/Btn';
 import { DatePicker } from '../components/DatePicker';
@@ -31,6 +31,12 @@ export const TYPES = [
 
 export type HabitType = typeof TYPES[number]['id'];
 
+export interface ReminderDraft {
+  time: string;
+  days: string[];
+  enabled: boolean;
+}
+
 export interface HabitFormValues {
   name: string;
   icon: string;
@@ -41,6 +47,7 @@ export interface HabitFormValues {
   frequency_config: string;
   start_date: string | null;
   end_date: string | null;
+  reminders?: ReminderDraft[];
 }
 
 interface StepperProps {
@@ -83,6 +90,7 @@ interface HabitFormProps {
   navTitle: string;
   saveLabel: ReactNode;
   defaultValues?: HabitFormValues;
+  defaultReminders?: ReminderDraft[];
   onSubmit: (values: HabitFormValues) => Promise<void>;
   onCancel: () => void;
   bottomSlot?: React.ReactNode;
@@ -90,7 +98,7 @@ interface HabitFormProps {
 }
 
 export function HabitForm({
-  navTitle, saveLabel, defaultValues,
+  navTitle, saveLabel, defaultValues, defaultReminders,
   onSubmit, onCancel, bottomSlot, autoFocusName,
 }: HabitFormProps) {
   const [name, setName] = useState(defaultValues?.name ?? '');
@@ -102,6 +110,7 @@ export function HabitForm({
   const [freqConfig, setFreqConfig] = useState(defaultValues?.frequency_config ?? '{}');
   const [startDate, setStartDate] = useState<string | null>(defaultValues?.start_date ?? null);
   const [endDate, setEndDate] = useState<string | null>(defaultValues?.end_date ?? null);
+  const [reminders, setReminders] = useState<ReminderDraft[]>(defaultReminders ?? []);
   const [saving, setSaving] = useState(false);
 
   function setFreqType(ft: FrequencyType) {
@@ -121,11 +130,31 @@ export function HabitForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
+  function addReminder() {
+    setReminders(prev => [...prev, { time: '08:00', days: ['L','M','X','J','V','S','D'], enabled: true }]);
+  }
+
+  function removeReminder(i: number) {
+    setReminders(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  function updateReminderTime(i: number, time: string) {
+    setReminders(prev => prev.map((r, idx) => idx === i ? { ...r, time } : r));
+  }
+
+  function toggleReminderDay(i: number, day: string) {
+    setReminders(prev => prev.map((r, idx) => {
+      if (idx !== i) return r;
+      const days = r.days.includes(day) ? r.days.filter(d => d !== day) : [...r.days, day];
+      return days.length > 0 ? { ...r, days } : r;
+    }));
+  }
+
   async function handleSubmit() {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await onSubmit({ name: name.trim(), icon, type, goal, pts, frequency_type: freqType, frequency_config: freqConfig, start_date: startDate, end_date: endDate });
+      await onSubmit({ name: name.trim(), icon, type, goal, pts, frequency_type: freqType, frequency_config: freqConfig, start_date: startDate, end_date: endDate, reminders });
     } finally {
       setSaving(false);
     }
@@ -323,6 +352,78 @@ export function HabitForm({
           </div>
         </div>
 
+        {/* Dates */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Fechas</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <DatePicker
+              label="Inicio"
+              value={startDate}
+              onChange={(v) => {
+                setStartDate(v);
+                if (endDate && v && endDate <= v) setEndDate(null);
+              }}
+              placeholder="Desde siempre"
+              minDate={todayLocalDate()}
+            />
+            <DatePicker
+              label="Fin"
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="Sin fecha de fin"
+              minDate={startDate ? addDays(startDate, 1) : todayLocalDate()}
+            />
+          </div>
+        </div>
+
+        {/* Reminders */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Recordatorios</div>
+
+          {reminders.map((r, i) => (
+            <div key={i} style={{ border: '1.8px solid var(--ink)', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Bell size={16} style={{ color: 'var(--ink-soft)', flexShrink: 0 }} />
+                <input
+                  type="time"
+                  value={r.time}
+                  onChange={(e) => updateReminderTime(i, e.target.value)}
+                  className="font-display text-ink"
+                  style={{ fontSize: 22, border: 'none', background: 'transparent', outline: 'none', flex: 1 }}
+                />
+                <button
+                  onClick={() => removeReminder(i)}
+                  className="bg-transparent cursor-pointer"
+                  style={{ border: 'none', padding: 4, color: 'var(--ink-soft)', display: 'flex', alignItems: 'center' }}
+                ><X size={16} /></button>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {WEEK_DAYS.map((d) => (
+                  <Btn
+                    key={d}
+                    variant="chip"
+                    size="xs"
+                    active={r.days.includes(d)}
+                    className="flex-1"
+                    style={{ padding: '5px 0', fontSize: 13 }}
+                    onClick={() => toggleReminderDay(i, d)}
+                  >{d}</Btn>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={addReminder}
+            className="font-hand text-ink-soft cursor-pointer bg-transparent"
+            style={{
+              border: '1.8px dashed var(--ink-soft)', borderRadius: 12,
+              padding: '10px 0', fontSize: 15, width: '100%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          ><Plus size={14} /> Añadir recordatorio</button>
+        </div>
+
         {/* Icon picker */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
           <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Ícono</div>
@@ -346,30 +447,6 @@ export function HabitForm({
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* Dates */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Fechas</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <DatePicker
-              label="Inicio"
-              value={startDate}
-              onChange={(v) => {
-                setStartDate(v);
-                if (endDate && v && endDate <= v) setEndDate(null);
-              }}
-              placeholder="Desde siempre"
-              minDate={todayLocalDate()}
-            />
-            <DatePicker
-              label="Fin"
-              value={endDate}
-              onChange={setEndDate}
-              placeholder="Sin fecha de fin"
-              minDate={startDate ? addDays(startDate, 1) : todayLocalDate()}
-            />
           </div>
         </div>
 
