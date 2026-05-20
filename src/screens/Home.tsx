@@ -1,11 +1,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ClockIcon, ChartBarIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ChartBarIcon, ClockIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
 import { useUndo } from '../hooks/useUndo';
-import { api, type Habit, type Reminder } from '../api/client';
+import { api, type Habit } from '../api/client';
 import { Ring } from '../components/Ring';
 import { Scribble } from '../components/Scribble';
 import { IconTile } from '../components/IconTile';
@@ -13,10 +13,11 @@ import { SketchBox } from '../components/SketchBox';
 import { BottomSheet } from '../components/BottomSheet';
 import { ConfirmSheet } from '../components/ConfirmSheet';
 import { Btn } from '../components/Btn';
+import { MiniBars } from '../components/MiniBars';
+import { ReminderBadge } from '../components/ReminderBadge';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { useVisibleTick } from '../hooks/useVisibleTick';
 import { ConfettiBurst } from '../components/ConfettiBurst';
 
 function formatSelectedDate(localDate: string, tz: string): string {
@@ -40,71 +41,6 @@ function habitSubtitle(h: Habit, todaySum: number): string {
     case 'at':    return todaySum >= 1 ? 'registrado' : 'pendiente';
     default:      return '';
   }
-}
-
-// 0=Mon … 6=Sun (ISO week order)
-const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-
-function nowMinutesInTz(tz: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit' }).formatToParts(new Date());
-  const h = Number(parts.find(p => p.type === 'hour')?.value ?? 0);
-  const m = Number(parts.find(p => p.type === 'minute')?.value ?? 0);
-  return h * 60 + m;
-}
-
-function todayDayLetter(tz: string): string {
-  const short = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(new Date());
-  const map: Record<string, string> = { Mon: 'L', Tue: 'M', Wed: 'X', Thu: 'J', Fri: 'V', Sat: 'S', Sun: 'D' };
-  return map[short] ?? '';
-}
-
-function reminderStatus(reminders: Reminder[] | undefined, tz: string): { kind: 'upcoming' | 'past'; minutes: number } | null {
-  if (!reminders || reminders.length === 0) return null;
-  const letter = todayDayLetter(tz);
-  const slots: number[] = [];
-  for (const r of reminders) {
-    if (!r.enabled) continue;
-    let days: string[] = [];
-    try { days = JSON.parse(r.days) as string[]; } catch { /* */ }
-    if (!days.includes(letter)) continue;
-    const [h, m] = r.time.split(':').map(Number);
-    if (Number.isFinite(h) && Number.isFinite(m)) slots.push(h * 60 + m);
-  }
-  if (slots.length === 0) return null;
-  slots.sort((a, b) => a - b);
-  const now = nowMinutesInTz(tz);
-  const next = slots.find(s => s >= now);
-  if (next !== undefined) return { kind: 'upcoming', minutes: next - now };
-  return { kind: 'past', minutes: now - slots[slots.length - 1] };
-}
-
-function formatDiff(mins: number): string {
-  if (mins < 1) return 'ahora';
-  if (mins < 60) return `${mins}m`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m === 0 ? `${h}h` : `${h}h ${m}m`;
-}
-
-function ReminderBadge({ reminders, timezone }: { reminders: Reminder[] | undefined; timezone: string }) {
-  useVisibleTick();
-  const r = reminderStatus(reminders, timezone);
-  if (!r) return null;
-  const isPast = r.kind === 'past';
-  return (
-    <div
-      className="font-hand"
-      style={{
-        fontSize: 13, marginTop: 3,
-        display: 'flex', alignItems: 'center', gap: 4,
-        color: isPast ? 'var(--coral)' : 'var(--ink-soft)',
-        opacity: isPast ? 1 : 0.85,
-      }}
-    >
-      <ClockIcon size={11} weight={isPast ? 'fill' : 'regular'} />
-      {isPast ? `hace ${formatDiff(r.minutes)}` : `en ${formatDiff(r.minutes)}`}
-    </div>
-  );
 }
 
 function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
@@ -133,51 +69,6 @@ function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
     return diffDays % every === 0;
   }
   return true;
-}
-
-function MiniBars({ weeklyChart, selectedDate, timezone }: { weeklyChart: number[]; selectedDate: string; timezone: string }) {
-  const raw = weeklyChart.length >= 7 ? weeklyChart.slice(-7) : weeklyChart;
-  const realToday = todayLocalDate(timezone);
-  const selectedIso = (new Date(`${selectedDate}T12:00:00Z`).getDay() + 6) % 7;
-  const mondayDateStr = addDays(selectedDate, -selectedIso);
-
-  const dateToValue = Object.fromEntries(
-    raw.map((v, i) => [addDays(realToday, i - (raw.length - 1)), v])
-  );
-
-  const slots = Array.from({ length: 7 }, (_, iso) => ({
-    v: dateToValue[addDays(mondayDateStr, iso)] ?? 0,
-    iso
-  }));
-
-  const max = Math.max(1, ...slots.map(s => s.v));
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 24 }}>
-        {slots.map(({ v, iso }) => (
-          <div key={iso} style={{
-            flex: 1,
-            height: `${Math.max(14, (v / max) * 100)}%`,
-            background: iso === selectedIso ? 'var(--coral)' : 'var(--ink)',
-            opacity: iso === selectedIso ? 1 : 0.35,
-            borderRadius: 2,
-          }} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 3 }}>
-        {slots.map(({ iso }) => (
-          <div key={iso} className="font-hand" style={{
-            flex: 1,
-            textAlign: 'center',
-            fontSize: 10,
-            color: iso === selectedIso ? 'var(--coral)' : 'var(--ink-soft)',
-            fontWeight: iso === selectedIso ? 600 : 400,
-          }}>{DAY_LETTERS[iso]}</div>
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export function Home() {
