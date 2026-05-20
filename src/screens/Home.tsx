@@ -16,6 +16,7 @@ import { Btn } from '../components/Btn';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { ConfettiBurst } from '../components/ConfettiBurst';
 
 function formatSelectedDate(localDate: string, tz: string): string {
   const { from } = localDayUtcRange(localDate, tz);
@@ -133,6 +134,9 @@ export function Home() {
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
   const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [confettiKey, setConfettiKey] = useState(0);
+  const [confettiActive, setConfettiActive] = useState(false);
+  const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressActive = useRef(false);
@@ -248,6 +252,11 @@ export function Home() {
       });
 
       if (isCompleting) {
+        if (confettiTimer.current) clearTimeout(confettiTimer.current);
+        setConfettiKey(k => k + 1);
+        setConfettiActive(true);
+        confettiTimer.current = setTimeout(() => setConfettiActive(false), 2800);
+
         setTimeout(() => {
           setLogStates(prev => ({ ...prev, [habit.id]: 'exiting' }));
           setTimeout(() => {
@@ -278,6 +287,7 @@ export function Home() {
 
   return (
     <div className="screen">
+      {confettiActive && <ConfettiBurst key={confettiKey} />}
       {/* Title */}
       <div style={{ padding: '14px 18px 8px' }}>
         <div className="flex items-start justify-between">

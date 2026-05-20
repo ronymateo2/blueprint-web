@@ -64,6 +64,12 @@ body {
 .shadow-sketch { box-shadow: var(--shadow-sketch); }
 .shadow-float  { box-shadow: var(--shadow-float);  }
 
+@keyframes cfetti {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  65%  { opacity: 1; }
+  100% { transform: translate(var(--cx), var(--cy)) rotate(var(--cr)); opacity: 0; }
+}
+
 @keyframes blink {
   50% { opacity: 0; }
 }
