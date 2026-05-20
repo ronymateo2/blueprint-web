@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ClockIcon, ChartBarIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -619,6 +619,18 @@ export function Home() {
                 label: 'Editar hábito',
                 color: 'var(--ink)',
                 action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/edit`); },
+              },
+              {
+                icon: <ClockIcon size={18} />,
+                label: 'Ver historial completo',
+                color: 'var(--ink)',
+                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/history`); },
+              },
+              {
+                icon: <ChartBarIcon size={18} />,
+                label: 'Ver estadísticas',
+                color: 'var(--ink)',
+                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/statistics`); },
               },
               {
                 icon: <LeafIcon size={18} />,
