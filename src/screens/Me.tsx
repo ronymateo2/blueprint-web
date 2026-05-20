@@ -38,10 +38,11 @@ function levelName(level: number): string {
 }
 
 function SettingsRow({
-  icon, label, detail, onTap, last, danger,
+  icon, label, detail, onTap, last, danger, isLoading,
 }: {
   icon: string; label: string; detail?: string;
   onTap?: () => void; last?: boolean; danger?: boolean;
+  isLoading?: boolean;
 }) {
   return (
     <div
@@ -55,7 +56,11 @@ function SettingsRow({
     >
       <HandIcon kind={icon} size={18} color={danger ? 'var(--coral)' : 'var(--ink)'} />
       <span className="font-hand flex-1" style={{ fontSize: 15, color: danger ? 'var(--coral)' : 'var(--ink)' }}>{label}</span>
-      {detail && <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{detail}</span>}
+      {isLoading ? (
+        <div className="skeleton-pulse" style={{ height: 14, width: 45, backgroundColor: 'rgba(42, 42, 42, 0.08)', borderRadius: 3 }} />
+      ) : (
+        detail && <span className="font-hand text-ink-soft" style={{ fontSize: 13 }}>{detail}</span>
+      )}
       {onTap && <CaretRight size={16} className="text-ink-soft" style={{ marginLeft: 4, flexShrink: 0 }} />}
     </div>
   );
@@ -63,13 +68,14 @@ function SettingsRow({
 
 export function Me() {
   const { user, logout, setUser } = useAuthContext();
-  const { stats } = useStats();
-  const { habits } = useHabits();
+  const { stats, loading: loadingStats } = useStats();
+  const { habits, loading: loadingHabits } = useHabits();
   const navigate = useNavigate();
   const [editingTz, setEditingTz] = useState(false);
   const [tz, setTz] = useState(user?.timezone ?? 'UTC');
   const [saving, setSaving] = useState(false);
   const [archivedHabits, setArchivedHabits] = useState<Habit[]>([]);
+  const [loadingArchived, setLoadingArchived] = useState(true);
   const [editingFont, setEditingFont] = useState(false);
   const [displayFont, setDisplayFont] = useState(
     () => localStorage.getItem('habit_display_font') ?? DISPLAY_FONTS[0].value
@@ -80,8 +86,13 @@ export function Me() {
   );
 
   useEffect(() => {
-    void api.habits.list(true).then(all => setArchivedHabits(all.filter(h => !!h.archived_at)));
+    setLoadingArchived(true);
+    void api.habits.list(true)
+      .then(all => setArchivedHabits(all.filter(h => !!h.archived_at)))
+      .finally(() => setLoadingArchived(false));
   }, []);
+
+  const isLoading = loadingStats || loadingHabits || loadingArchived;
 
   const level = stats?.level ?? 1;
   const xp = stats?.totalPoints ?? 0;
@@ -121,21 +132,37 @@ export function Me() {
 
   return (
     <div className="screen">
+      <style>{`
+        @keyframes skeleton-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.38; }
+        }
+        .skeleton-pulse {
+          animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+      `}</style>
+      
       {/* Header */}
       <div style={{ padding: '14px 18px 6px', display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div className="font-display leading-none flex items-center" style={{ fontSize: 42, marginTop: 4 }}>
           Yo <Scribble width={36} style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: 6, marginTop: -2 }} />
         </div>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
-          nivel {level} · {levelName(level)}
-        </div>
+        {isLoading ? (
+          <div className="skeleton-pulse" style={{ height: 16, width: 120, backgroundColor: 'rgba(42, 42, 42, 0.08)', borderRadius: 4, marginTop: 6 }} />
+        ) : (
+          <div className="font-hand text-ink-soft" style={{ fontSize: 16, marginTop: 2 }}>
+            nivel {level} · {levelName(level)}
+          </div>
+        )}
       </div>
 
       <div className="screen-scroll flex flex-col gap-[10px]" style={{ padding: '4px 14px 20px' }}>
 
         {/* Profile card */}
         <SketchBox padding={14} radius={18} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {user?.avatar_url ? (
+          {isLoading ? (
+            <div className="skeleton-pulse" style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(42, 42, 42, 0.12)', flexShrink: 0 }} />
+          ) : user?.avatar_url ? (
             <img
               src={user.avatar_url} alt=""
               style={{ width: 64, height: 64, borderRadius: 32, border: '1.6px solid var(--ink)', flexShrink: 0 }}
@@ -152,35 +179,47 @@ export function Me() {
               {(user?.display_name ?? '?')[0]?.toUpperCase()}
             </div>
           )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="font-display" style={{ fontSize: 28, lineHeight: 1 }}>{user?.display_name ?? 'Usuario'}</div>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 2 }}>
-              Nivel {level} · {levelName(level)}
+          
+          {isLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
+              <div className="skeleton-pulse" style={{ height: 24, width: '60%', backgroundColor: 'rgba(42, 42, 42, 0.12)', borderRadius: 4 }} />
+              <div className="skeleton-pulse" style={{ height: 14, width: '40%', backgroundColor: 'rgba(42, 42, 42, 0.08)', borderRadius: 3 }} />
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <div className="skeleton-pulse" style={{ height: 22, width: 45, backgroundColor: 'rgba(235, 94, 85, 0.08)', borderRadius: 999 }} />
+                <div className="skeleton-pulse" style={{ height: 22, width: 55, backgroundColor: 'rgba(42, 42, 42, 0.08)', borderRadius: 999 }} />
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-              <span
-                className="font-hand"
-                style={{
-                  padding: '3px 10px', borderRadius: 999,
-                  border: '1.6px solid var(--coral)', color: 'var(--coral)',
-                  fontSize: 13,
-                }}
-              >
-                <FireIcon size={13} weight="fill" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
-                {streak}d
-              </span>
-              <span
-                className="font-hand"
-                style={{
-                  padding: '3px 10px', borderRadius: 999,
-                  border: '1.6px solid var(--ink)',
-                  fontSize: 13,
-                }}
-              >
-                {xp} XP
-              </span>
+          ) : (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="font-display" style={{ fontSize: 28, lineHeight: 1 }}>{user?.display_name ?? 'Usuario'}</div>
+              <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 2 }}>
+                Nivel {level} · {levelName(level)}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <span
+                  className="font-hand"
+                  style={{
+                    padding: '3px 10px', borderRadius: 999,
+                    border: '1.6px solid var(--coral)', color: 'var(--coral)',
+                    fontSize: 13,
+                  }}
+                >
+                  <FireIcon size={13} weight="fill" style={{ display: 'inline', verticalAlign: 'middle', marginRight: 3 }} />
+                  {streak}d
+                </span>
+                <span
+                  className="font-hand"
+                  style={{
+                    padding: '3px 10px', borderRadius: 999,
+                    border: '1.6px solid var(--ink)',
+                    fontSize: 13,
+                  }}
+                >
+                  {xp} XP
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </SketchBox>
 
         {/* Stats */}
@@ -199,7 +238,11 @@ export function Me() {
             >
               <HandIcon kind={it.icon} size={20} />
               <span className="font-hand flex-1" style={{ fontSize: 16 }}>{it.label}</span>
-              <span className="font-display" style={{ fontSize: 22, lineHeight: 1, whiteSpace: 'nowrap' }}>{it.value}</span>
+              {isLoading ? (
+                <div className="skeleton-pulse" style={{ height: 20, width: 55, backgroundColor: 'rgba(42, 42, 42, 0.12)', borderRadius: 4 }} />
+              ) : (
+                <span className="font-display" style={{ fontSize: 22, lineHeight: 1, whiteSpace: 'nowrap' }}>{it.value}</span>
+              )}
             </div>
           ))}
         </SketchBox>
@@ -233,6 +276,7 @@ export function Me() {
               label="Zona horaria"
               detail={user?.timezone ?? 'UTC'}
               onTap={() => setEditingTz(true)}
+              isLoading={isLoading}
               last
             />
           )}
@@ -263,6 +307,7 @@ export function Me() {
               label="Fuente display"
               detail={DISPLAY_FONTS.find(f => f.value === displayFont)?.label ?? 'Caveat'}
               onTap={() => setEditingFont(true)}
+              isLoading={isLoading}
               last
             />
           )}
@@ -293,6 +338,7 @@ export function Me() {
               label="Fuente hand"
               detail={HAND_FONTS.find(f => f.value === handFont)?.label ?? 'Patrick Hand'}
               onTap={() => setEditingHandFont(true)}
+              isLoading={isLoading}
               last
             />
           )}
@@ -304,6 +350,7 @@ export function Me() {
             label="Hábitos archivados"
             detail={String(archivedCount)}
             onTap={() => navigate('/habits/archived')}
+            isLoading={isLoading}
           />
           <SettingsRow
             icon="bolt"
@@ -317,6 +364,7 @@ export function Me() {
               a.href = url; a.download = 'habits.json'; a.click();
               URL.revokeObjectURL(url);
             }}
+            isLoading={isLoading}
             last
           />
         </SketchBox>
