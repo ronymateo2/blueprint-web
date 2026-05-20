@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Toaster } from 'sonner';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { NavProvider, useNavDirection, type NavDirection } from './context/NavContext';
 import { TabBar } from './components/TabBar';
@@ -86,6 +87,8 @@ function AppLayout() {
   );
 }
 
+const queryClient = new QueryClient();
+
 export function App() {
   useEffect(() => {
     const display = localStorage.getItem('habit_display_font');
@@ -95,6 +98,7 @@ export function App() {
   }, []);
 
   return (
+    <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <BrowserRouter>
         <NavProvider>
@@ -128,5 +132,6 @@ export function App() {
         />
       </BrowserRouter>
     </AuthProvider>
+    </QueryClientProvider>
   );
 }

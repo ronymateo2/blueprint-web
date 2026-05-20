@@ -11,6 +11,7 @@ React 19 SPA deployed on Cloudflare Pages. Talks to `blueprint_api` (separate Wo
 | Routing | React Router v7 |
 | Styling | **Tailwind CSS v4** + CSS custom properties (design tokens) |
 | PWA | `vite-plugin-pwa` — `autoUpdate` mode, polls every 60s |
+| Data cache | `@tanstack/react-query` v5 — shared low-churn queries only |
 | Language | TypeScript (strict) |
 
 ## Dev Commands
@@ -146,14 +147,24 @@ See [`src/components/COMPONENTS.md`](src/components/COMPONENTS.md) for component
 
 ## Data Fetching Patterns
 
-Hooks follow this pattern:
+**Default pattern** (data that changes frequently or is scoped to one component):
 ```ts
 const [data, setData] = useState([]);
 const [loading, setLoading] = useState(true);
 useEffect(() => { api.xxx.get().then(setData).finally(() => setLoading(false)); }, [deps]);
 ```
 
-No external state manager. No React Query. Simple useState + useEffect + direct API calls.
+**React Query** (`@tanstack/react-query`) — use when data rarely changes and multiple components need the same data. Deduplicates in-flight requests; all instances share one cache entry. Use `staleTime` to control background refetch frequency. Invalidate via `queryClient.invalidateQueries({ queryKey })` after mutations so all consumers update.
+
+```ts
+// hook
+const { data = [], isLoading } = useQuery({ queryKey: ['key'], queryFn: () => api.x.list(), staleTime: 30_000 });
+
+// after mutation
+queryClient.invalidateQueries({ queryKey: ['key'] });
+```
+
+`useHabits` uses React Query (`queryKey: ['habits']`, `staleTime: 30s`). Use the same pattern for other shared, low-churn data.
 
 ## Key Decisions
 
@@ -162,7 +173,7 @@ No external state manager. No React Query. Simple useState + useEffect + direct 
 | Tailwind v4 via `@tailwindcss/vite` | Zero PostCSS config; CSS-first `@theme` maps design tokens directly to utilities |
 | Keep `tokens.css` `:root` vars | Components with computed colors (e.g., `border: \`1.6px solid ${c}\``) still need `var(--ink)` inline |
 | PWA `autoUpdate` + 60s poll | Silently refreshes on new deploy without user prompt; poll catches long-open sessions |
-| No React Query | Simple hooks are enough; the app is small and single-user per session |
+| React Query for shared low-churn data | Multiple components consuming same endpoint caused N parallel fetches; React Query deduplicates and caches. Use for data that rarely changes (`habits`). Keep plain `useState+useEffect` for component-local or frequently-mutated data. |
 | LocalStorage for token | Simple; no cookie complexity needed for a Cloudflare Pages setup |
 | React Router `useLocation` in AuthCallback | StrictMode double-invoke would clear `window.location.search` before second effect run |
 | `public/_redirects` for SPA routing | Cloudflare Pages serves `index.html` for all routes, enabling client-side navigation |
