@@ -2,6 +2,8 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
 import { HandIcon } from '../components/HandIcon';
 import { Btn } from '../components/Btn';
+import { DatePicker } from '../components/DatePicker';
+import { todayLocalDate, addDays } from '../lib/dateUtils';
 
 export type FrequencyType = 'daily' | 'weekly' | 'monthly' | 'interval';
 
@@ -37,6 +39,8 @@ export interface HabitFormValues {
   pts: number;
   frequency_type: FrequencyType;
   frequency_config: string;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 interface StepperProps {
@@ -96,6 +100,8 @@ export function HabitForm({
   const [pts, setPts] = useState(defaultValues?.pts ?? 5);
   const [freqType, setFreqTypeRaw] = useState<FrequencyType>(defaultValues?.frequency_type ?? 'daily');
   const [freqConfig, setFreqConfig] = useState(defaultValues?.frequency_config ?? '{}');
+  const [startDate, setStartDate] = useState<string | null>(defaultValues?.start_date ?? null);
+  const [endDate, setEndDate] = useState<string | null>(defaultValues?.end_date ?? null);
   const [saving, setSaving] = useState(false);
 
   function setFreqType(ft: FrequencyType) {
@@ -119,7 +125,7 @@ export function HabitForm({
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await onSubmit({ name: name.trim(), icon, type, goal, pts, frequency_type: freqType, frequency_config: freqConfig });
+      await onSubmit({ name: name.trim(), icon, type, goal, pts, frequency_type: freqType, frequency_config: freqConfig, start_date: startDate, end_date: endDate });
     } finally {
       setSaving(false);
     }
@@ -340,6 +346,30 @@ export function HabitForm({
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Dates */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '6px 0' }}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.6 }}>Fechas</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <DatePicker
+              label="Inicio"
+              value={startDate}
+              onChange={(v) => {
+                setStartDate(v);
+                if (endDate && v && endDate <= v) setEndDate(null);
+              }}
+              placeholder="Desde siempre"
+              minDate={todayLocalDate()}
+            />
+            <DatePicker
+              label="Fin"
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="Sin fecha de fin"
+              minDate={startDate ? addDays(startDate, 1) : todayLocalDate()}
+            />
           </div>
         </div>
 

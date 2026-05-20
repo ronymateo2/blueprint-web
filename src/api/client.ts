@@ -52,6 +52,8 @@ export interface Habit {
   frequency_type: 'daily' | 'weekly' | 'monthly' | 'interval';
   frequency_config: string;
   archived_at: string | null;
+  start_date: string | null;
+  end_date: string | null;
   created_at: string;
   updated_at: string;
   reminders: Reminder[];

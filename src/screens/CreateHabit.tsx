@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { Plus } from '@phosphor-icons/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { HabitForm, type HabitFormValues } from './HabitForm';
+import { HABITS_KEY } from '../hooks/useHabits';
 
 export function CreateHabit() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   async function save(values: HabitFormValues) {
     await api.habits.create({
@@ -13,7 +16,10 @@ export function CreateHabit() {
       goal: values.goal, unit: null, points: values.pts, sort_order: 0,
       frequency_type: values.frequency_type,
       frequency_config: values.frequency_config,
+      start_date: values.start_date,
+      end_date: values.end_date,
     });
+    await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
     navigate('/', { replace: true });
   }
 

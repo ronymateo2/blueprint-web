@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { api, type Habit } from '../api/client';
 import { HabitForm, type HabitFormValues, type HabitType } from './HabitForm';
 import { ConfirmSheet } from '../components/ConfirmSheet';
+import { HABITS_KEY } from '../hooks/useHabits';
 
 function apiTypeToDesign(t: Habit['type']): HabitType {
   if (t === 'time') return 'time';
@@ -13,6 +15,7 @@ function apiTypeToDesign(t: Habit['type']): HabitType {
 export function EditHabit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [habit, setHabit] = useState<Habit | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
 
@@ -29,7 +32,10 @@ export function EditHabit() {
       goal: values.goal, points: values.pts,
       frequency_type: values.frequency_type,
       frequency_config: values.frequency_config,
+      start_date: values.start_date,
+      end_date: values.end_date,
     });
+    await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
     navigate(-1);
   }
 
@@ -60,6 +66,8 @@ export function EditHabit() {
         pts: habit.points,
         frequency_type: habit.frequency_type ?? 'daily',
         frequency_config: habit.frequency_config ?? '{}',
+        start_date: habit.start_date,
+        end_date: habit.end_date,
       }}
       onSubmit={save}
       onCancel={() => navigate(-1)}

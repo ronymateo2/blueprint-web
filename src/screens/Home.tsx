@@ -191,7 +191,12 @@ export function Home() {
   const sumByHabit: Record<string, number> = {};
   entries.forEach((e) => { sumByHabit[e.habit_id] = (sumByHabit[e.habit_id] ?? 0) + e.value; });
 
-  const activeHabits = habits.filter(h => !h.archived_at && isHabitDueOnDate(h, selectedDate, timezone));
+  const activeHabits = habits.filter(h => {
+    if (h.archived_at) return false;
+    if (h.start_date && selectedDate < h.start_date) return false;
+    if (h.end_date && selectedDate > h.end_date) return false;
+    return isHabitDueOnDate(h, selectedDate, timezone);
+  });
   const pendingHabits = activeHabits.filter(h => {
     const sum = sumByHabit[h.id] ?? 0;
     const isCompleted = sum >= h.goal;
