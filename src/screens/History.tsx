@@ -3,10 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { useHabits } from "../hooks/useHabits";
 import { useEntries } from "../hooks/useEntries";
-import { HandIcon } from "../components/HandIcon";
-import { Btn } from "../components/Btn";
-import { SketchBox } from "../components/SketchBox";
-import { Scribble } from "../components/Scribble";
+import { HandIcon } from "../components/ui/HandIcon";
+import { Btn } from "../components/ui/Btn";
+import { SketchBox } from "../components/ui/SketchBox";
+import { Scribble } from "../components/ui/Scribble";
 import {
   daysAgoLocalDate,
   utcToLocalDate,

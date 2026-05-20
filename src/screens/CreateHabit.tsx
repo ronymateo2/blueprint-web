@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
-import { HabitForm, type HabitFormValues } from './HabitForm';
+import { HabitForm, type HabitFormValues } from '../components/habits/HabitForm';
 import { HABITS_KEY } from '../hooks/useHabits';
 
 export function CreateHabit() {

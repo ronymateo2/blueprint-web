@@ -1,4 +1,4 @@
-import { HandIcon } from './HandIcon';
+import { HandIcon } from '../ui/HandIcon';
 
 interface IconTileProps {
   kind: string;

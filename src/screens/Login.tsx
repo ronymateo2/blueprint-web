@@ -1,5 +1,5 @@
-import { Scribble } from '../components/Scribble';
-import { HandIcon } from '../components/HandIcon';
+import { Scribble } from '../components/ui/Scribble';
+import { HandIcon } from '../components/ui/HandIcon';
 
 export function Login() {
   const apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8787';

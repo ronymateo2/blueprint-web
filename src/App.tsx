@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { NavProvider, useNavDirection, type NavDirection } from './context/NavContext';
-import { TabBar } from './components/TabBar';
+import { TabBar } from './components/ui/TabBar';
 import { Login } from './screens/Login';
 import { AuthCallback } from './screens/AuthCallback';
 import { Home } from './screens/Home';

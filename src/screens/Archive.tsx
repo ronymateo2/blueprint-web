@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { api, type Habit } from '../api/client';
-import { SketchBox } from '../components/SketchBox';
-import { Btn } from '../components/Btn';
-import { IconTile } from '../components/IconTile';
-import { Scribble } from '../components/Scribble';
-import { ConfirmSheet } from '../components/ConfirmSheet';
+import { SketchBox } from '../components/ui/SketchBox';
+import { Btn } from '../components/ui/Btn';
+import { IconTile } from '../components/habits/IconTile';
+import { Scribble } from '../components/ui/Scribble';
+import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 
 function daysAgo(isoDate: string): number {
   return Math.floor((Date.now() - new Date(isoDate).getTime()) / 86400000);

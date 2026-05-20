@@ -2,10 +2,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
-import { Scribble } from '../components/Scribble';
-import { Btn } from '../components/Btn';
-import { SketchBox } from '../components/SketchBox';
-import { HandIcon } from '../components/HandIcon';
+import { Scribble } from '../components/ui/Scribble';
+import { Btn } from '../components/ui/Btn';
+import { SketchBox } from '../components/ui/SketchBox';
+import { HandIcon } from '../components/ui/HandIcon';
 import { daysAgoLocalDate, utcToLocalDate, todayLocalDate, formatTime } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 

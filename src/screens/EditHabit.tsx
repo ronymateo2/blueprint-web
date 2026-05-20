@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, type Habit } from '../api/client';
-import { HabitForm, type HabitFormValues, type HabitType, type ReminderDraft } from './HabitForm';
-import { ConfirmSheet } from '../components/ConfirmSheet';
+import { HabitForm, type HabitFormValues, type HabitType, type ReminderDraft } from '../components/habits/HabitForm';
+import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 import { HABITS_KEY } from '../hooks/useHabits';
 
 function apiTypeToDesign(t: Habit['type']): HabitType {

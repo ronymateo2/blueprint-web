@@ -4,10 +4,10 @@ import { ArrowLeft } from '@phosphor-icons/react';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
-import { SketchBox } from '../components/SketchBox';
-import { HandIcon } from '../components/HandIcon';
-import { Scribble } from '../components/Scribble';
-import { Btn } from '../components/Btn';
+import { SketchBox } from '../components/ui/SketchBox';
+import { HandIcon } from '../components/ui/HandIcon';
+import { Scribble } from '../components/ui/Scribble';
+import { Btn } from '../components/ui/Btn';
 import { daysAgoLocalDate, utcToLocalDate, todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 

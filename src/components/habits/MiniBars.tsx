@@ -1,4 +1,4 @@
-import { todayLocalDate, addDays } from '../lib/dateUtils';
+import { todayLocalDate, addDays } from '../../lib/dateUtils';
 
 const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 

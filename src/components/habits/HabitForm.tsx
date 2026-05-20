@@ -1,9 +1,9 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { ArrowLeft, Plus, Minus, X, Bell } from '@phosphor-icons/react';
-import { HandIcon } from '../components/HandIcon';
-import { Btn } from '../components/Btn';
-import { DatePicker } from '../components/DatePicker';
-import { todayLocalDate, addDays } from '../lib/dateUtils';
+import { HandIcon } from '../ui/HandIcon';
+import { Btn } from '../ui/Btn';
+import { DatePicker } from '../ui/DatePicker';
+import { todayLocalDate, addDays } from '../../lib/dateUtils';
 
 export type FrequencyType = 'daily' | 'weekly' | 'monthly' | 'interval';
 

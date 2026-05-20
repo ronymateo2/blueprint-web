@@ -8,9 +8,9 @@ import {
 } from "@phosphor-icons/react";
 import { useHabits } from "../hooks/useHabits";
 import { useEntries } from "../hooks/useEntries";
-import { Scribble } from "../components/Scribble";
-import { SketchBox } from "../components/SketchBox";
-import { Btn } from "../components/Btn";
+import { Scribble } from "../components/ui/Scribble";
+import { SketchBox } from "../components/ui/SketchBox";
+import { Btn } from "../components/ui/Btn";
 import { todayLocalDate, utcToLocalDate, addDays } from "../lib/dateUtils";
 import { useAuthContext } from "../context/AuthContext";
 import { type Habit } from "../api/client";

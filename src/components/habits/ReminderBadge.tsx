@@ -1,6 +1,6 @@
 import { ClockIcon } from '@phosphor-icons/react';
-import { useVisibleTick } from '../hooks/useVisibleTick';
-import type { Reminder } from '../api/client';
+import { useVisibleTick } from '../../hooks/useVisibleTick';
+import type { Reminder } from '../../api/client';
 
 function nowMinutesInTz(tz: string): number {
   const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour12: false, hour: '2-digit', minute: '2-digit' }).formatToParts(new Date());

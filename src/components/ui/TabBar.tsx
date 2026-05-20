@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HandIcon } from './HandIcon';
 import { Scribble } from './Scribble';
-import { useNavDirection } from '../context/NavContext';
+import { useNavDirection } from '../../context/NavContext';
 
 const TABS = [
   { id: 'home', icon: 'sun', label: 'Hoy', path: '/' },

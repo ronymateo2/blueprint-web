@@ -5,10 +5,10 @@ import { useAuthContext } from '../context/AuthContext';
 import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
 import { api, type Habit } from '../api/client';
-import { SketchBox } from '../components/SketchBox';
-import { HandIcon } from '../components/HandIcon';
-import { Scribble } from '../components/Scribble';
-import { Btn } from '../components/Btn';
+import { SketchBox } from '../components/ui/SketchBox';
+import { HandIcon } from '../components/ui/HandIcon';
+import { Scribble } from '../components/ui/Scribble';
+import { Btn } from '../components/ui/Btn';
 
 const HAND_FONTS: { label: string; value: string }[] = [
   { label: 'Patrick Hand',  value: "'Patrick Hand', cursive" },
