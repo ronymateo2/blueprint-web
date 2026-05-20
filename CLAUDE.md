@@ -40,17 +40,23 @@ src/
   design/
     tokens.css        # Legacy :root CSS vars (var(--ink) etc.) — kept for dynamic inline styles
     global.css        # body reset, .screen / .screen-scroll, .shadow-sketch, keyframes
-  components/         # Reusable UI primitives — see COMPONENTS.md
-    Ring.tsx          # SVG progress ring
-    HandIcon.tsx      # 20 hand-drawn SVG icons
-    IconTile.tsx      # Icon in a sketchy bordered box
-    SketchBox.tsx     # Dashed/solid border card
-    SketchButton.tsx  # Pill-shaped sketchy button
-    TabBar.tsx        # Bottom navigation (4 tabs)
-    UndoToast.tsx     # 4s countdown toast with undo action
-    Heatmap.tsx       # GitHub-style activity heatmap
-    BarChart.tsx      # 7-bar weekly chart
-    Scribble.tsx      # SVG wavy underline accent
+  components/
+    ui/               # Primitivas puras — zero domain knowledge, no Habit/Reminder types
+      Btn.tsx         # Button (6 variants: primary, outline, danger, ink, segment, chip)
+      SketchBox.tsx   # Bordered card (dashed/solid)
+      BottomSheet.tsx # Slide-up modal with overlay
+      ConfirmSheet.tsx# Confirmation dialog (wraps BottomSheet)
+      Ring.tsx        # SVG circular progress ring
+      Scribble.tsx    # SVG wavy underline accent
+      HandIcon.tsx    # Phosphor icon lookup by name (30 icons)
+      DatePicker.tsx  # Calendar input via BottomSheet
+      TabBar.tsx      # Bottom navigation (4 tabs)
+    habits/           # Componentes de dominio — saben de Habit, Reminder, lógica de hábitos
+      HabitForm.tsx   # Form for create/edit habit (used by CreateHabit + EditHabit screens)
+      IconTile.tsx    # Habit icon in bordered tile
+      ReminderBadge.tsx # Clock badge showing time to/from reminder
+      MiniBars.tsx    # 7-day mini bar chart (weekly activity)
+      ConfettiBurst.tsx # Celebration animation on habit completion
   screens/            # Route-level components
     Login.tsx         # "Continuar con Google" OAuth redirect
     AuthCallback.tsx  # Reads ?token= from URL, saves to localStorage
@@ -58,8 +64,11 @@ src/
     QuickAction.tsx   # Full-screen big circle (log a habit)
     Points.tsx        # XP card + bar chart + heatmap
     History.tsx       # Per-habit heatmaps + recent entries
-    CreateHabit.tsx   # New habit form
-    EditHabit.tsx     # Edit habit + reminders
+    HabitHistory.tsx  # Single habit entry history
+    HabitStatistics.tsx # Single habit stats + calendar
+    CreateHabit.tsx   # Wraps HabitForm for creation
+    EditHabit.tsx     # Wraps HabitForm for editing
+    Archive.tsx       # Archived habits list
     Me.tsx            # Profile + timezone + logout
   hooks/
     useAuth.ts        # Verifies token via /api/auth/me; removes token on 401
@@ -125,7 +134,7 @@ All font sizes are **inline `style={{ fontSize: N }}`** — not Tailwind text-* 
 | 13 | Caption secondary (stat labels, "Esta semana", countdown, tz section label) |
 | 12 | Micro label (bar chart days, heatmap legend, tab bar labels) |
 
-`SketchButton`: `small=true` → 14px, normal → 17px.
+`Btn`: `size="sm"` → 14px, default → 17px.
 `font-display` for numbers/titles. `font-hand` for body/labels.
 
 ### Tailwind token → class reference
@@ -143,7 +152,7 @@ All font sizes are **inline `style={{ fontSize: N }}`** — not Tailwind text-* 
 | `var(--shadow-float)` | `shadow-float` |
 
 See [`DESIGN.md`](../../DESIGN.md) for full design system reference.
-See [`src/components/COMPONENTS.md`](src/components/COMPONENTS.md) for component API reference.
+See [`COMPONENTS.md`](COMPONENTS.md) for component API reference (props, variants, usage examples).
 
 ## Data Fetching Patterns
 
@@ -177,12 +186,30 @@ queryClient.invalidateQueries({ queryKey: ['key'] });
 | LocalStorage for token | Simple; no cookie complexity needed for a Cloudflare Pages setup |
 | React Router `useLocation` in AuthCallback | StrictMode double-invoke would clear `window.location.search` before second effect run |
 | `public/_redirects` for SPA routing | Cloudflare Pages serves `index.html` for all routes, enabling client-side navigation |
+| `components/ui/` + `components/habits/` split | `ui/` = zero domain knowledge (reusable anywhere); `habits/` = knows Habit/Reminder types. Prevents domain logic from leaking into primitives. |
+| `HabitForm` in `components/habits/` not `screens/` | Used by two screens (CreateHabit, EditHabit) — belongs in components, not screens |
+
+## Component Placement Rule
+
+| Question | → | Folder |
+|----------|---|--------|
+| Imports `Habit`, `Reminder`, or other domain types? | yes | `components/habits/` |
+| Could live in a different project unchanged? | yes | `components/ui/` |
+| Used by exactly one screen, no reuse planned? | yes | inline in that screen |
 
 ## Adding a Screen
 
 1. Create `src/screens/MyScreen.tsx` — always wrap content in `<div className="screen">` + `<div className="screen-scroll">` + `<TabBar />`
-2. Add route in `App.tsx` inside `<ProtectedRoute>` unless it's a public screen
-3. Add tab entry in `TabBar.tsx` if it becomes a main tab
+2. Import `TabBar` from `'../components/ui/TabBar'`
+3. Add route in `App.tsx` inside `<ProtectedRoute>` unless it's a public screen
+4. Add tab entry in `components/ui/TabBar.tsx` if it becomes a main tab
+
+## Adding a Component
+
+- **Pure UI** (no domain types) → `src/components/ui/`
+- **Habit feature** (uses Habit/Reminder/habit logic) → `src/components/habits/`
+- Import from screens: `'../components/ui/Btn'` or `'../components/habits/IconTile'`
+- Import from habits/ components: `'../ui/HandIcon'` (one level up to sibling folder)
 
 ## Adding a Hook
 
