@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CalendarBlank, CaretLeft, CaretRight, X } from '@phosphor-icons/react';
 import { BottomSheet } from './BottomSheet';
 
@@ -43,14 +43,24 @@ export function DatePicker({ label, value, onChange, placeholder = 'Sin fecha', 
   const initMonth = value ? parseInt(value.slice(5, 7)) - 1 : now.getMonth();
   const [viewYear, setViewYear] = useState(initYear);
   const [viewMonth, setViewMonth] = useState(initMonth);
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
   const today = todayStr();
   const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
 
+  useEffect(() => {
+    if (value) {
+      setViewYear(parseInt(value.slice(0, 4)));
+      setViewMonth(parseInt(value.slice(5, 7)) - 1);
+    }
+  }, [value]);
+
   function prev() {
+    setSlideDir('left');
     if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11); }
     else setViewMonth(m => m - 1);
   }
   function next() {
+    setSlideDir('right');
     if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0); }
     else setViewMonth(m => m + 1);
   }
@@ -142,7 +152,8 @@ export function DatePicker({ label, value, onChange, placeholder = 'Sin fecha', 
           </div>
         </div>
 
-        {/* Day headers */}
+        {/* Day headers + grid — keyed so React remounts on month change, triggering slide */}
+        <div key={`${viewYear}-${viewMonth}`} className={slideDir === 'right' ? 'dp-slide-right' : slideDir === 'left' ? 'dp-slide-left' : ''}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6, borderBottom: '1.5px dashed var(--ink-soft)', paddingBottom: 6 }}>
           {DAYS.map(d => (
             <div key={d} className="font-hand text-ink-soft" style={{ textAlign: 'center', fontSize: 12, textTransform: 'uppercase', letterSpacing: 0.4 }}>
@@ -154,7 +165,7 @@ export function DatePicker({ label, value, onChange, placeholder = 'Sin fecha', 
         {/* Day grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
           {cells.map((day, i) => {
-            if (!day) return <div key={i} style={{ height: 36 }} />;
+            if (!day) return <div key={i} style={{ height: 44 }} />;
             const ds = toStr(viewYear, viewMonth, day);
             const isSelected = ds === value;
             const isToday = ds === today;
@@ -166,7 +177,7 @@ export function DatePicker({ label, value, onChange, placeholder = 'Sin fecha', 
                 disabled={disabled}
                 onClick={() => pick(day)}
                 style={{
-                  height: 36, borderRadius: 8,
+                  height: 44, borderRadius: 8,
                   border: isSelected
                     ? '1.6px solid var(--coral)'
                     : isToday
@@ -186,6 +197,7 @@ export function DatePicker({ label, value, onChange, placeholder = 'Sin fecha', 
             );
           })}
         </div>
+        </div>{/* end slide wrapper */}
 
         {value && (
           <button
