@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, Minus, X, Bell } from '@phosphor-icons/react';
 import { HandIcon } from '../ui/HandIcon';
 import { Btn } from '../ui/Btn';
 import { DatePicker } from '../ui/DatePicker';
-import { todayLocalDate, addDays } from '../../lib/dateUtils';
+import { todayLocalDate } from '../../lib/dateUtils';
 
 export type FrequencyType = 'daily' | 'weekly' | 'monthly' | 'interval';
 
