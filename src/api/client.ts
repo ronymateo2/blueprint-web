@@ -85,6 +85,20 @@ export interface Stats {
   timezone: string;
 }
 
+export interface PointsChartBar {
+  label: string;
+  points: number;
+  today: boolean;
+}
+
+export interface PointsData {
+  dayChart: PointsChartBar[];
+  weekChart: PointsChartBar[];
+  monthChart: PointsChartBar[];
+  yearChart: PointsChartBar[];
+  habitHeatmaps: { habitId: string; values: number[] }[];
+}
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -130,5 +144,9 @@ export const api = {
 
   stats: {
     get: () => req<Stats>('GET', '/api/stats'),
+  },
+
+  points: {
+    get: () => req<PointsData>('GET', '/api/points'),
   },
 };
