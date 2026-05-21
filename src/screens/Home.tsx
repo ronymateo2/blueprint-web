@@ -434,7 +434,7 @@ export function Home() {
                   onMouseLeave={cancelLongPress}
                   onClick={() => {
                     if (longPressActive.current) { longPressActive.current = false; return; }
-                    if (!isFuture) navigate(`/habits/${h.id}`);
+                    if (!isFuture) navigate(`/habits/${h.id}`, { state: { selectedDate } });
                   }}
                   style={{
                     cursor: !isFuture ? 'pointer' : 'default',

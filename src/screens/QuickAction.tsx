@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
 import { useEntries } from '../hooks/useEntries';
 import { useUndo } from '../hooks/useUndo';
@@ -179,11 +179,13 @@ function ActionMenuRow({ icon, label, onTap, danger }: { icon: string; label: st
 export function QuickAction() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { timezone } = useAuthContext();
   const { habits } = useHabits();
   const habit = habits.find((h) => h.id === id);
   const today = todayLocalDate(timezone);
-  const { from, to } = localDayUtcRange(today, timezone);
+  const selectedDate = (location.state as any)?.selectedDate ?? today;
+  const { from, to } = localDayUtcRange(selectedDate, timezone);
 
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
   const { show: showToast } = useUndo();
@@ -209,8 +211,9 @@ export function QuickAction() {
   const ringLabel = habit.type === 'time' ? `${todaySum}′` : habit.type === 'yn' ? (todaySum >= 1 ? '✓' : '+') : `${todaySum}`;
   const ringSubLabel = habit.type === 'yn'
     ? (done ? 'completado' : 'toca para marcar')
-    : `de ${habit.goal}${habit.type === 'time' ? ' min' : ''} hoy`;
+    : `de ${habit.goal}${habit.type === 'time' ? ' min' : ''} ${selectedDate === today ? 'hoy' : ''}`;
   const lastEntry = [...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())[0];
+  const backLabel = selectedDate === today ? 'Hoy' : 'Atrás';
 
   async function doLog(value: number) {
     const entry = await api.entries.create({ habit_id: habit!.id, value });
@@ -257,7 +260,7 @@ export function QuickAction() {
     <div className="screen">
       {/* Nav */}
       <div style={{ padding: '14px 14px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Btn onClick={() => navigate(-1)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> Hoy</Btn>
+        <Btn onClick={() => navigate(-1)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}><ArrowLeft size={16} /> {backLabel}</Btn>
         <div style={{ display: 'flex', gap: 8 }}>
           <Btn onClick={() => navigate(`/habits/${habit.id}/edit`)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}>editar</Btn>
           <Btn onClick={() => setMoreOpen(true)} style={{ height: 36, padding: '0 14px', fontSize: 16 }}>···</Btn>
@@ -337,7 +340,7 @@ export function QuickAction() {
 
         {/* Today's log */}
         <div style={{ marginTop: 24 }}>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 13, margin: '0 0 4px', letterSpacing: 0.5 }}>HOY</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, margin: '0 0 4px', letterSpacing: 0.5 }}>{selectedDate === today ? 'HOY' : 'REGISTROS'}</div>
           {entries.length === 0 ? (
             <div className="font-hand text-ink-soft" style={{ fontSize: 14, padding: '6px 0' }}>· sin registros aún</div>
           ) : (
