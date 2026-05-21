@@ -361,7 +361,7 @@ export function HabitForm({
               value={startDate}
               onChange={(v) => {
                 setStartDate(v);
-                if (endDate && v && endDate <= v) setEndDate(null);
+                if (endDate && v && endDate < v) setEndDate(null);
               }}
               placeholder="Desde siempre"
               minDate={todayLocalDate()}
@@ -371,7 +371,7 @@ export function HabitForm({
               value={endDate}
               onChange={setEndDate}
               placeholder="Sin fecha de fin"
-              minDate={startDate ? addDays(startDate, 1) : todayLocalDate()}
+              minDate={startDate || todayLocalDate()}
             />
           </div>
         </div>
