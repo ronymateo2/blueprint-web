@@ -167,6 +167,8 @@ export function Home() {
 
   const activeHabits = habits.filter(h => {
     if (h.archived_at) return false;
+    const createdLocalDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(h.created_at));
+    if (selectedDate < createdLocalDate) return false;
     if (h.start_date && selectedDate < h.start_date) return false;
     if (h.end_date && selectedDate > h.end_date) return false;
     return isHabitDueOnDate(h, selectedDate, timezone);
