@@ -18,9 +18,10 @@ const FREQ_TYPES: { id: FrequencyType; label: string }[] = [
 
 export const ICONS = [
   'dish','water','run','pill','book','mug','sun','moon','fire','star',
-  'leaf','bolt','clock','target','dumb','bell','heart','music','phone','plus',
+  'leaf','bolt','clock','target','dumb','bell','heart','music','phone',
   'walk','wash','shower',
   'avocado','cow','strategy',
+  'cart','carrot','brain','plane','pen',
 ];
 
 export const TYPES = [

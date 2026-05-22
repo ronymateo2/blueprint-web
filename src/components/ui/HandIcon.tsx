@@ -26,6 +26,11 @@ import {
   AvocadoIcon,
   CowIcon,
   StrategyIcon,
+  ShoppingCartIcon,
+  CarrotIcon,
+  BrainIcon,
+  AirplaneIcon,
+  PenIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -57,6 +62,11 @@ const ICONS: Record<string, Icon> = {
   avocado:  AvocadoIcon,
   cow:      CowIcon,
   strategy: StrategyIcon,
+  cart:     ShoppingCartIcon,
+  carrot:   CarrotIcon,
+  brain:    BrainIcon,
+  plane:    AirplaneIcon,
+  pen:      PenIcon,
 };
 
 interface HandIconProps {
