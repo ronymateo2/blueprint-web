@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import { useHabits } from "../hooks/useHabits";
 import { useEntries } from "../hooks/useEntries";
+import { useHabitSkips } from "../hooks/useHabitSkips";
 import { Scribble } from "../components/ui/Scribble";
 import { SketchBox } from "../components/ui/SketchBox";
 import { Btn } from "../components/ui/Btn";
@@ -48,6 +49,7 @@ export function HabitStatistics() {
 
   // Fetch all entries for this habit
   const { entries, loading } = useEntries({ habitId: id });
+  const { skips: habitSkips } = useHabitSkips(id);
 
   // Current month displayed in the calendar
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -113,6 +115,7 @@ export function HabitStatistics() {
 
     const today = todayLocalDate(timezone);
     const createdLocalDate = utcToLocalDate(habit.created_at, timezone);
+    const manualSkippedDates = new Set(habitSkips.map((s) => s.local_date));
 
     // Group entry values by local date
     const valByDate: Record<string, number> = {};
@@ -145,6 +148,8 @@ export function HabitStatistics() {
       if (active) {
         if (met) {
           statusMap[d] = "SUCCESS";
+        } else if (manualSkippedDates.has(d)) {
+          statusMap[d] = "SKIPPED";
         } else if (d === today) {
           statusMap[d] = "PENDING";
         } else {
@@ -266,7 +271,7 @@ export function HabitStatistics() {
       today,
       valByDate,
     };
-  }, [habit, entries, timezone]);
+  }, [habit, entries, habitSkips, timezone]);
 
   // Generate monthly calendar cells
   const calendarCells = useMemo(() => {

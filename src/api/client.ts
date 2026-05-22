@@ -72,6 +72,11 @@ export interface Entry {
   habit_icon?: string;
 }
 
+export interface Skip {
+  habit_id: string;
+  local_date: string;
+}
+
 export interface Stats {
   totalPoints: number;
   todayPoints: number;
@@ -140,6 +145,13 @@ export const api = {
     create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string }) =>
       req<Entry>('POST', '/api/entries', data),
     delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/entries/${id}`),
+  },
+
+  skips: {
+    list: (local_date: string) => req<Skip[]>('GET', `/api/skips?local_date=${encodeURIComponent(local_date)}`),
+    listByHabit: (habit_id: string) => req<Skip[]>('GET', `/api/skips?habit_id=${encodeURIComponent(habit_id)}`),
+    create: (habit_id: string, local_date: string) => req<Skip>('POST', '/api/skips', { habit_id, local_date }),
+    delete: (habit_id: string, local_date: string) => req<{ ok: boolean }>('DELETE', `/api/skips/${encodeURIComponent(habit_id)}?local_date=${encodeURIComponent(local_date)}`),
   },
 
   stats: {

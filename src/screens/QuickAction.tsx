@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus } from '@phosphor-icons/react';
+import { ArrowLeft, Plus, Minus, ProhibitIcon } from '@phosphor-icons/react';
 import { useEntries } from '../hooks/useEntries';
 import { useUndo } from '../hooks/useUndo';
 import { api, type Entry } from '../api/client';
@@ -11,6 +11,7 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 import { Btn } from '../components/ui/Btn';
 import { useHabits } from '../hooks/useHabits';
+import { useSkips } from '../hooks/useSkips';
 import { todayLocalDate, localDayUtcRange, formatTime } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 
@@ -188,6 +189,8 @@ export function QuickAction() {
   const { from, to } = localDayUtcRange(selectedDate, timezone);
 
   const { entries, reload: reloadEntries, setEntries } = useEntries({ habitId: id, from, to });
+  const { skips } = useSkips(selectedDate);
+  const isSkipped = skips.some((s) => s.habit_id === id);
   const { show: showToast } = useUndo();
   const [moreOpen, setMoreOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -216,6 +219,7 @@ export function QuickAction() {
   const backLabel = selectedDate === today ? 'Hoy' : 'Atrás';
 
   async function doLog(value: number) {
+    if (isSkipped) return;
     const entry = await api.entries.create({ habit_id: habit!.id, value });
     await reloadEntries();
     showToast({
@@ -282,10 +286,21 @@ export function QuickAction() {
           {typeLabel(habit.type)} · meta {habit.goal}{habit.type === 'time' ? ' min' : ''} / día
         </div>
 
+        {/* Skipped banner */}
+        {isSkipped && (
+          <div
+            className="font-hand flex items-center justify-center gap-[6px]"
+            style={{ marginTop: 14, color: 'var(--ink-soft)', fontSize: 15 }}
+          >
+            <ProhibitIcon size={16} />
+            salteado este día
+          </div>
+        )}
+
         {/* Big ring */}
         <div
-          onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
-          style={{ margin: '22px auto 0', position: 'relative', cursor: 'pointer', width: 230, height: 230 }}
+          onClick={!isSkipped ? () => void doLog(habit.type === 'time' ? habit.goal : 1) : undefined}
+          style={{ margin: '22px auto 0', position: 'relative', cursor: isSkipped ? 'default' : 'pointer', width: 230, height: 230, opacity: isSkipped ? 0.45 : 1 }}
         >
           <Ring
             size={230}
@@ -318,25 +333,27 @@ export function QuickAction() {
         </div>
 
         {/* CTA */}
-        <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <Btn
-            variant="primary"
-            onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
-            style={{ padding: '14px 36px', fontSize: 20 }}
-          >
-            {habit.type !== 'time' && <HandIcon kind="plus" size={20} color="var(--paper)" />}
-            {habit.type === 'yn'
-              ? (done ? 'Ya marcado' : 'Marcar como hecho')
-              : habit.type === 'time'
-              ? `Registrar +${habit.goal} min`
-              : 'Registrar uno'}
-          </Btn>
-          {habit.type !== 'yn' && (
-            <Btn onClick={() => setLogOpen(true)} style={{ padding: '10px 28px', fontSize: 16 }}>
-              registrar otra cantidad
+        {!isSkipped && (
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <Btn
+              variant="primary"
+              onClick={() => void doLog(habit.type === 'time' ? habit.goal : 1)}
+              style={{ padding: '14px 36px', fontSize: 20 }}
+            >
+              {habit.type !== 'time' && <HandIcon kind="plus" size={20} color="var(--paper)" />}
+              {habit.type === 'yn'
+                ? (done ? 'Ya marcado' : 'Marcar como hecho')
+                : habit.type === 'time'
+                ? `Registrar +${habit.goal} min`
+                : 'Registrar uno'}
             </Btn>
-          )}
-        </div>
+            {habit.type !== 'yn' && (
+              <Btn onClick={() => setLogOpen(true)} style={{ padding: '10px 28px', fontSize: 16 }}>
+                registrar otra cantidad
+              </Btn>
+            )}
+          </div>
+        )}
 
         {/* Today's log */}
         <div style={{ marginTop: 24 }}>

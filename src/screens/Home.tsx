@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ChartBarIcon, ClockIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ChartBarIcon, ClockIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
 import { useUndo } from '../hooks/useUndo';
+import { useSkips } from '../hooks/useSkips';
 import { api, type Habit } from '../api/client';
 import { Ring } from '../components/ui/Ring';
 import { Scribble } from '../components/ui/Scribble';
@@ -81,6 +82,8 @@ export function Home() {
   const isToday = selectedDate === realToday;
   const { from, to } = localDayUtcRange(selectedDate, timezone);
   const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
+  const { skips, loading: skipsLoading, reload: reloadSkips } = useSkips(selectedDate);
+  const skippedIds = new Set(skips.map((s) => s.habit_id));
   const { show: showToast } = useUndo();
   const [logStates, setLogStates] = useState<Record<string, 'logging' | 'done' | 'exiting'>>({});
   const [completingHabitIds, setCompletingHabitIds] = useState<Record<string, boolean>>({});
@@ -88,6 +91,7 @@ export function Home() {
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
   const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [skippedExpanded, setSkippedExpanded] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const [confettiActive, setConfettiActive] = useState(false);
   const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,6 +112,18 @@ export function Home() {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+  }
+
+  async function skipHabit(h: Habit) {
+    setContextHabit(null);
+    await api.skips.create(h.id, selectedDate);
+    await reloadSkips();
+  }
+
+  async function unskipHabit(h: Habit) {
+    setContextHabit(null);
+    await api.skips.delete(h.id, selectedDate);
+    await reloadSkips();
   }
 
   async function archiveHabit(h: Habit) {
@@ -155,28 +171,30 @@ export function Home() {
     if (h.end_date && selectedDate > h.end_date) return false;
     return isHabitDueOnDate(h, selectedDate, timezone);
   });
-  const pendingHabits = activeHabits.filter(h => {
+  const nonSkippedActiveHabits = activeHabits.filter(h => !skippedIds.has(h.id));
+  const pendingHabits = nonSkippedActiveHabits.filter(h => {
     const sum = sumByHabit[h.id] ?? 0;
     const isCompleted = sum >= h.goal;
     const isTransitioning = !!completingHabitIds[h.id];
     return !isCompleted || isTransitioning;
   });
-  const completedHabits = activeHabits.filter(h => {
+  const completedHabits = nonSkippedActiveHabits.filter(h => {
     const sum = sumByHabit[h.id] ?? 0;
     const isCompleted = sum >= h.goal;
     const isTransitioning = !!completingHabitIds[h.id];
     return isCompleted && !isTransitioning;
   });
-  const doneHabits = activeHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
-  const dayPct = activeHabits.length > 0 ? doneHabits / activeHabits.length : 0;
-  const totalPossiblePoints = activeHabits.reduce((s, h) => s + h.points * h.goal, 0);
+  const skippedHabits = activeHabits.filter(h => skippedIds.has(h.id));
+  const doneHabits = nonSkippedActiveHabits.filter(h => (sumByHabit[h.id] ?? 0) >= h.goal).length;
+  const dayPct = nonSkippedActiveHabits.length > 0 ? doneHabits / nonSkippedActiveHabits.length : 0;
+  const totalPossiblePoints = nonSkippedActiveHabits.reduce((s, h) => s + h.points * h.goal, 0);
   const selectedDatePoints = entries.reduce((sum, e) => sum + e.points, 0);
   const displayPoints = isToday ? (stats?.todayPoints ?? 0) : selectedDatePoints;
   const ptsPct = totalPossiblePoints > 0 ? Math.min(1, displayPoints / totalPossiblePoints) : 0;
 
   async function logHabit(habit: Habit, e: React.MouseEvent) {
     e.stopPropagation();
-    if (logStates[habit.id]) return;
+    if (logStates[habit.id] || skippedIds.has(habit.id)) return;
 
     const currentSum = sumByHabit[habit.id] ?? 0;
     const logValue = habit.type === 'time' ? habit.goal : 1;
@@ -232,7 +250,7 @@ export function Home() {
 
   const weeklyChart = stats?.weeklyChart ?? [];
 
-  if (habitsLoading || statsLoading || entriesLoading) {
+  if (habitsLoading || statsLoading || entriesLoading || skipsLoading) {
     return (
       <div className="screen items-center justify-center">
         <span className="font-hand text-ink-soft">Cargando…</span>
@@ -372,11 +390,11 @@ export function Home() {
                   {doneHabits}
                 </span>
                 <span className="font-display" style={{ fontSize: 30, color: 'var(--ink-soft)' }}>
-                  {' / '}{activeHabits.length}
+                  {' / '}{nonSkippedActiveHabits.length}
                 </span>
               </div>
               <span className="font-hand text-ink-soft" style={{ fontSize: 15, letterSpacing: 0.4, textTransform: 'uppercase' }}>
-                hábitos{activeHabits.length > 0 && doneHabits === activeHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
+                hábitos{nonSkippedActiveHabits.length > 0 && doneHabits === nonSkippedActiveHabits.length ? <> · ¡completo! <ConfettiIcon size={14} weight="fill" color="var(--coral)" style={{ display: 'inline', verticalAlign: 'middle' }} /></> : ''}
               </span>
             </>
           )}
@@ -416,9 +434,12 @@ export function Home() {
             const renderHabitCard = (h: Habit) => {
               const sum = sumByHabit[h.id] ?? 0;
               const done = sum >= h.goal;
+              const isSkipped = skippedIds.has(h.id);
               const state = logStates[h.id];
               const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
               const valueLabel = isFuture
+                ? '—'
+                : isSkipped
                 ? '—'
                 : h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : '0')
                 : h.type === 'time' ? `${sum}′`
@@ -453,8 +474,8 @@ export function Home() {
                     radius={16}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 14,
-                      opacity: done ? 0.62 : 1,
-                      background: done ? 'rgba(255,255,255,0.4)' : 'transparent',
+                      opacity: (done || isSkipped) ? 0.62 : 1,
+                      background: (done || isSkipped) ? 'rgba(255,255,255,0.4)' : 'transparent',
                     }}
                   >
                     <IconTile kind={h.icon} size={50} />
@@ -476,11 +497,11 @@ export function Home() {
 
                     {/* Tap-to-log area */}
                     <div
-                      onClick={!isFuture ? (e) => { void logHabit(h, e); } : undefined}
+                      onClick={(!isFuture && !isSkipped) ? (e) => { void logHabit(h, e); } : undefined}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
-                        opacity: !isFuture ? 1 : 0.35,
-                        pointerEvents: !isFuture ? 'auto' : 'none',
+                        opacity: (!isFuture && !isSkipped) ? 1 : 0.35,
+                        pointerEvents: (!isFuture && !isSkipped) ? 'auto' : 'none',
                       }}
                     >
                       <div
@@ -496,7 +517,7 @@ export function Home() {
                       >
                         {state === 'logging' ? '…' : (state === 'done' || state === 'exiting') ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : valueLabel}
                       </div>
-                      {h.type !== 'yn' && !isFuture && (
+                      {h.type !== 'yn' && !isFuture && !isSkipped && (
                         <div style={{
                           width: 44, height: 5, borderRadius: 999,
                           border: '1px solid var(--ink)', overflow: 'hidden',
@@ -565,6 +586,52 @@ export function Home() {
                     </div>
                   </>
                 )}
+
+                {skippedHabits.length > 0 && (
+                  <>
+                    <div style={{ borderTop: '1.5px dashed var(--ink-soft)', margin: '6px 4px' }} />
+                    <button
+                      onClick={() => setSkippedExpanded(!skippedExpanded)}
+                      className="font-display active:scale-98 transition-transform cursor-pointer flex items-center justify-between"
+                      style={{
+                        WebkitTapHighlightColor: 'transparent',
+                        fontSize: 24,
+                        color: 'var(--ink)',
+                        padding: '6px 4px',
+                        width: '100%',
+                        textAlign: 'left',
+                        border: 'none',
+                        background: 'none',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                      }}
+                    >
+                      <span>
+                        {skippedHabits.length} {skippedHabits.length === 1 ? 'salteado' : 'salteados'}
+                      </span>
+                      <CaretDownIcon
+                        size={18}
+                        style={{
+                          color: 'var(--ink-soft)',
+                          transform: skippedExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.25s ease-in-out',
+                        }}
+                      />
+                    </button>
+                    <div
+                      style={{
+                        maxHeight: skippedExpanded ? '1000px' : '0px',
+                        opacity: skippedExpanded ? 1 : 0,
+                        transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
+                        overflow: skippedExpanded ? 'visible' : 'hidden',
+                      }}
+                    >
+                      <div className="flex flex-col gap-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
+                        {skippedHabits.map(renderHabitCard)}
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             );
           })()
@@ -603,6 +670,19 @@ export function Home() {
                 color: 'var(--ink)',
                 action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/statistics`); },
               },
+              skippedIds.has(contextHabit.id)
+                ? {
+                    icon: <CheckIcon size={18} />,
+                    label: 'Quitar del skip',
+                    color: 'var(--ink)',
+                    action: () => unskipHabit(contextHabit),
+                  }
+                : {
+                    icon: <ArrowRightIcon size={18} />,
+                    label: 'Saltear hoy',
+                    color: 'var(--ink)',
+                    action: () => skipHabit(contextHabit),
+                  },
               {
                 icon: <LeafIcon size={18} />,
                 label: 'Archivar hábito',
@@ -615,7 +695,7 @@ export function Home() {
                 color: 'var(--coral)',
                 action: () => deleteHabit(contextHabit),
               },
-            ] as const).map(({ icon, label, color, action }) => (
+            ]).map(({ icon, label, color, action }) => (
               <button
                 key={label}
                 onClick={action}
