@@ -365,7 +365,7 @@ export function QuickAction() {
                         {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
                       </span>
                     </div>
-                    <span className="font-display text-coral" style={{ fontSize: 18, fontWeight: 'bold' }}>+{e.points} pts</span>
+                    <span className="font-display text-coral" style={{ fontSize: 18, fontWeight: 'bold' }}>+{e.points} XP</span>
                   </div>
                 ))}
             </div>
