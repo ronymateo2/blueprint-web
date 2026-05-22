@@ -179,7 +179,8 @@ export function Home() {
     if (logStates[habit.id]) return;
 
     const currentSum = sumByHabit[habit.id] ?? 0;
-    const isCompleting = currentSum < habit.goal && (currentSum + 1) >= habit.goal;
+    const logValue = habit.type === 'time' ? habit.goal : 1;
+    const isCompleting = currentSum < habit.goal && (currentSum + logValue) >= habit.goal;
 
     setLogStates(prev => ({ ...prev, [habit.id]: 'logging' }));
     if (isCompleting) {
@@ -187,7 +188,7 @@ export function Home() {
     }
 
     try {
-      const payload: Parameters<typeof api.entries.create>[0] = { habit_id: habit.id, value: 1 };
+      const payload: Parameters<typeof api.entries.create>[0] = { habit_id: habit.id, value: logValue };
       if (!isToday) {
         payload.logged_at = from;
       }

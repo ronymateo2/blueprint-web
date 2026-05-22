@@ -346,22 +346,26 @@ export function QuickAction() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {[...entries].sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
-                .slice(0, 5).map((e) => (
+                  .map((e, idx, arr) => (
                   <div
                     key={e.id}
                     onClick={() => setEditEntry(e)}
-                    className="cursor-pointer flex justify-between font-hand"
+                    className="cursor-pointer flex justify-between items-center font-hand"
                     style={{
-                      fontSize: 17, padding: '6px 0',
-                      borderBottom: '1px dashed var(--ink-soft)',
-                      whiteSpace: 'nowrap', gap: 4,
+                      fontSize: 16, padding: '6px 0',
+                      borderBottom: idx === arr.length - 1 ? 'none' : '1px dashed var(--ink-soft)',
+                      opacity: 0.9,
                     }}
                   >
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      · {formatTime(e.logged_at, timezone)} —{' '}
-                      {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
-                    </span>
-                    <span className="text-ink-soft" style={{ flex: '0 0 auto' }}>+{e.points} pts</span>
+                    <div className="flex items-center gap-[8px] flex-1 min-w-0">
+                      <span className="text-ink-soft" style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>
+                        {formatTime(e.logged_at, timezone)}
+                      </span>
+                      <span className="overflow-hidden text-ellipsis whitespace-nowrap flex-1 text-ink" style={{ marginLeft: 6 }}>
+                        {habit.type === 'time' ? `${e.value} min` : habit.type === 'yn' ? 'marcado' : `+${e.value}`}
+                      </span>
+                    </div>
+                    <span className="font-display text-coral" style={{ fontSize: 18, fontWeight: 'bold' }}>+{e.points} pts</span>
                   </div>
                 ))}
             </div>
