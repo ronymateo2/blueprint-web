@@ -22,6 +22,7 @@ export const ICONS = [
   'walk','wash','shower',
   'avocado','cow','strategy',
   'cart','carrot','brain','plane','pen',
+  'tooth','pint','bike','bed','cactus','spray','pin','desktop','plus'
 ];
 
 export const TYPES = [

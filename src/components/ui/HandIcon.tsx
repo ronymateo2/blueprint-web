@@ -31,6 +31,14 @@ import {
   BrainIcon,
   AirplaneIcon,
   PenIcon,
+  ToothIcon,
+  PintGlassIcon,
+  BicycleIcon,
+  BedIcon,
+  CactusIcon,
+  SprayBottleIcon,
+  MapPinIcon,
+  DesktopTowerIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -67,6 +75,14 @@ const ICONS: Record<string, Icon> = {
   brain:    BrainIcon,
   plane:    AirplaneIcon,
   pen:      PenIcon,
+  tooth:    ToothIcon,
+  pint:     PintGlassIcon,
+  bike:     BicycleIcon,
+  bed:      BedIcon,
+  cactus:   CactusIcon,
+  spray:    SprayBottleIcon,
+  pin:      MapPinIcon,
+  desktop:  DesktopTowerIcon,
 };
 
 interface HandIconProps {
