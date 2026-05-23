@@ -95,7 +95,6 @@ export function Home() {
   const [confettiKey, setConfettiKey] = useState(0);
   const [confettiActive, setConfettiActive] = useState(false);
   const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchStartX = useRef<number | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressActive = useRef(false);
 
@@ -408,14 +407,6 @@ export function Home() {
       <div
         className="screen-scroll flex flex-col gap-[10px]"
         style={{ padding: '4px 14px 100px' }}
-        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => {
-          if (touchStartX.current === null) return;
-          const dx = e.changedTouches[0].clientX - touchStartX.current;
-          touchStartX.current = null;
-          if (Math.abs(dx) < 50) return;
-          dx < 0 ? goForward() : goBack();
-        }}
       >
         {activeHabits.length === 0 ? (
           <SketchBox dashed padding={20} style={{ textAlign: 'center', marginTop: 20 }}>
