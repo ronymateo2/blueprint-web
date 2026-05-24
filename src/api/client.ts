@@ -86,7 +86,6 @@ export interface Stats {
   levelNext: number;
   weekPct: number;
   weeklyChart: number[];
-  heatmap: number[];
   timezone: string;
 }
 
