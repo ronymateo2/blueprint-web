@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -15,6 +15,7 @@ import { HabitCard } from '../components/home/HabitCard';
 import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 import { Btn } from '../components/ui/Btn';
 import { MiniBars } from '../components/habits/MiniBars';
+import { Collapsible } from '../components/ui/Collapsible';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -79,8 +80,6 @@ export function Home() {
   const [ringFlipped, setRingFlipped] = useLocalStorage('ring_view', false);
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
-  const [completedExpanded, setCompletedExpanded] = useState(false);
-  const [skippedExpanded, setSkippedExpanded] = useState(false);
   const [confettiKey, setConfettiKey] = useState(0);
   const [confettiActive, setConfettiActive] = useState(false);
   const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -229,6 +228,21 @@ export function Home() {
       </div>
     );
   }
+  const renderHabitCard = (h: Habit) => (
+    <HabitCard
+      key={h.id}
+      habit={h}
+      sum={sumByHabit[h.id] ?? 0}
+      isSkipped={skippedIds.has(h.id)}
+      isFuture={isFuture}
+      isToday={isToday}
+      selectedDate={selectedDate}
+      timezone={timezone}
+      logState={logStates[h.id]}
+      onLog={logHabit}
+      onLongPress={setContextHabit}
+    />
+  );
 
   return (
     <div className="screen">
@@ -394,121 +408,21 @@ export function Home() {
             )}
           </SketchBox>
         ) : (
-          (() => {
-            const renderHabitCard = (h: Habit) => (
-              <HabitCard
-                key={h.id}
-                habit={h}
-                sum={sumByHabit[h.id] ?? 0}
-                isSkipped={skippedIds.has(h.id)}
-                isFuture={isFuture}
-                isToday={isToday}
-                selectedDate={selectedDate}
-                timezone={timezone}
-                logState={logStates[h.id]}
-                onLog={logHabit}
-                onLongPress={setContextHabit}
-              />
-            );
+          <>
+            {pendingHabits.map(renderHabitCard)}
 
-            return (
-              <>
-                {pendingHabits.map(renderHabitCard)}
+            {completedHabits.length > 0 && (
+              <Collapsible title={`${doneHabits} ${doneHabits === 1 ? 'completado' : 'completados'}`}>
+                {completedHabits.map(renderHabitCard)}
+              </Collapsible>
+            )}
 
-                {completedHabits.length > 0 && (
-                  <>
-                    <div style={{ borderTop: '1.5px dashed var(--ink-soft)', margin: '6px 4px' }} />
-                    <button
-                      onClick={() => setCompletedExpanded(!completedExpanded)}
-                      className="font-display active:scale-98 transition-transform cursor-pointer flex items-center justify-between"
-                      style={{
-                        WebkitTapHighlightColor: 'transparent',
-                        fontSize: 24,
-                        color: 'var(--ink)',
-                        padding: '6px 4px',
-                        width: '100%',
-                        textAlign: 'left',
-                        border: 'none',
-                        background: 'none',
-                        userSelect: 'none',
-                        WebkitUserSelect: 'none',
-                      }}
-                    >
-                      <span>
-                        {doneHabits} {doneHabits === 1 ? 'completado' : 'completados'}
-                      </span>
-                      <CaretDownIcon
-                        size={18}
-                        style={{
-                          color: 'var(--ink-soft)',
-                          transform: completedExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.25s ease-in-out',
-                        }}
-                      />
-                    </button>
-                    <div
-                      style={{
-                        maxHeight: completedExpanded ? '1000px' : '0px',
-                        opacity: completedExpanded ? 1 : 0,
-                        transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
-                        overflow: completedExpanded ? 'visible' : 'hidden',
-                      }}
-                    >
-                      <div className="flex flex-col gap-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
-                        {completedHabits.map(renderHabitCard)}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {skippedHabits.length > 0 && (
-                  <>
-                    <div style={{ borderTop: '1.5px dashed var(--ink-soft)', margin: '6px 4px' }} />
-                    <button
-                      onClick={() => setSkippedExpanded(!skippedExpanded)}
-                      className="font-display active:scale-98 transition-transform cursor-pointer flex items-center justify-between"
-                      style={{
-                        WebkitTapHighlightColor: 'transparent',
-                        fontSize: 24,
-                        color: 'var(--ink)',
-                        padding: '6px 4px',
-                        width: '100%',
-                        textAlign: 'left',
-                        border: 'none',
-                        background: 'none',
-                        userSelect: 'none',
-                        WebkitUserSelect: 'none',
-                      }}
-                    >
-                      <span>
-                        {skippedHabits.length} {skippedHabits.length === 1 ? 'salteado' : 'salteados'}
-                      </span>
-                      <CaretDownIcon
-                        size={18}
-                        style={{
-                          color: 'var(--ink-soft)',
-                          transform: skippedExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.25s ease-in-out',
-                        }}
-                      />
-                    </button>
-                    <div
-                      style={{
-                        maxHeight: skippedExpanded ? '1000px' : '0px',
-                        opacity: skippedExpanded ? 1 : 0,
-                        transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
-                        overflow: skippedExpanded ? 'visible' : 'hidden',
-                      }}
-                    >
-                      <div className="flex flex-col gap-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
-                        {skippedHabits.map(renderHabitCard)}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </>
-            );
-          })()
+            {skippedHabits.length > 0 && (
+              <Collapsible title={`${skippedHabits.length} ${skippedHabits.length === 1 ? 'salteado' : 'salteados'}`}>
+                {skippedHabits.map(renderHabitCard)}
+              </Collapsible>
+            )}
+          </>
         )}
         <div style={{ height: 20 }} />
       </div>
