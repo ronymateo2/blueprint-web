@@ -190,8 +190,7 @@ export function Home() {
         text: `${habit.name} · +${entry.points} pts`,
         onUndo: async () => {
           await api.entries.delete(entry.id);
-          await reloadEntries();
-          await reloadStats();
+          await Promise.allSettled([reloadEntries(), reloadStats()]);
         },
       });
 
