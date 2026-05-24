@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, PencilSimpleIcon, LeafIcon, TrashIcon, CaretDownIcon, ChartBarIcon, ClockIcon, ArrowRightIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -11,7 +11,7 @@ import { Ring } from '../components/ui/Ring';
 import { Scribble } from '../components/ui/Scribble';
 import { IconTile } from '../components/habits/IconTile';
 import { SketchBox } from '../components/ui/SketchBox';
-import { BottomSheet } from '../components/ui/BottomSheet';
+import { HabitOptionsSheet } from '../components/home/HabitOptionsSheet';
 import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 import { Btn } from '../components/ui/Btn';
 import { MiniBars } from '../components/habits/MiniBars';
@@ -638,74 +638,15 @@ export function Home() {
         onConfirm={executeDelete}
         onCancel={() => setConfirmDelete(null)}
       />
-      <BottomSheet open={!!contextHabit} onClose={() => setContextHabit(null)}>
-        {contextHabit && (
-          <>
-            <div className="font-display" style={{ fontSize: 22, marginBottom: 2 }}>{contextHabit.name}</div>
-            <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 16 }}>opciones del hábito</div>
-            {([
-              {
-                icon: <PencilSimpleIcon size={18} />,
-                label: 'Editar hábito',
-                color: 'var(--ink)',
-                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/edit`); },
-              },
-              {
-                icon: <ClockIcon size={18} />,
-                label: 'Ver historial completo',
-                color: 'var(--ink)',
-                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/history`); },
-              },
-              {
-                icon: <ChartBarIcon size={18} />,
-                label: 'Ver estadísticas',
-                color: 'var(--ink)',
-                action: () => { setContextHabit(null); navigate(`/habits/${contextHabit.id}/statistics`); },
-              },
-              skippedIds.has(contextHabit.id)
-                ? {
-                    icon: <CheckIcon size={18} />,
-                    label: 'Quitar del skip',
-                    color: 'var(--ink)',
-                    action: () => unskipHabit(contextHabit),
-                  }
-                : {
-                    icon: <ArrowRightIcon size={18} />,
-                    label: 'Saltear hoy',
-                    color: 'var(--ink)',
-                    action: () => skipHabit(contextHabit),
-                  },
-              {
-                icon: <LeafIcon size={18} />,
-                label: 'Archivar hábito',
-                color: 'var(--ink)',
-                action: () => archiveHabit(contextHabit),
-              },
-              {
-                icon: <TrashIcon size={18} />,
-                label: 'Eliminar permanente',
-                color: 'var(--coral)',
-                action: () => deleteHabit(contextHabit),
-              },
-            ]).map(({ icon, label, color, action }) => (
-              <button
-                key={label}
-                onClick={action}
-                className="font-hand"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  width: '100%', padding: '13px 0',
-                  background: 'none', border: 'none', borderBottom: '1px dashed var(--ink-soft)',
-                  cursor: 'pointer', fontSize: 17, color,
-                  textAlign: 'left',
-                }}
-              >
-                {icon}{label}
-              </button>
-            ))}
-          </>
-        )}
-      </BottomSheet>
+      <HabitOptionsSheet
+        habit={contextHabit}
+        isSkipped={contextHabit ? skippedIds.has(contextHabit.id) : false}
+        onClose={() => setContextHabit(null)}
+        onSkip={() => skipHabit(contextHabit!)}
+        onUnskip={() => unskipHabit(contextHabit!)}
+        onArchive={() => archiveHabit(contextHabit!)}
+        onDelete={() => deleteHabit(contextHabit!)}
+      />
     </div>
   );
 }
