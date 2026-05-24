@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FireIcon, ConfettiIcon, PlusIcon, CheckIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react';
+import { FireIcon, ConfettiIcon, PlusIcon, CaretLeftIcon, CaretRightIcon, CaretDownIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useStats } from '../hooks/useStats';
@@ -9,13 +9,12 @@ import { useSkips } from '../hooks/useSkips';
 import { api, type Habit } from '../api/client';
 import { Ring } from '../components/ui/Ring';
 import { Scribble } from '../components/ui/Scribble';
-import { IconTile } from '../components/habits/IconTile';
 import { SketchBox } from '../components/ui/SketchBox';
 import { HabitOptionsSheet } from '../components/home/HabitOptionsSheet';
+import { HabitCard } from '../components/home/HabitCard';
 import { ConfirmSheet } from '../components/ui/ConfirmSheet';
 import { Btn } from '../components/ui/Btn';
 import { MiniBars } from '../components/habits/MiniBars';
-import { ReminderBadge } from '../components/habits/ReminderBadge';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
 import { useLocalStorage } from '../hooks/useLocalStorage';
@@ -33,16 +32,6 @@ function formatDayName(localDate: string, tz: string): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long' }).format(noon);
 }
 
-function habitSubtitle(h: Habit, todaySum: number): string {
-  switch (h.type) {
-    case 'count': return todaySum >= h.goal ? 'hecho' : `de ${h.goal} · +${h.points} pts c/u`;
-    case 'time':  return `de ${h.goal} min`;
-    case 'yn':    return todaySum >= 1 ? 'hecho' : 'pendiente';
-    case 'qty':   return `de ${h.goal} ${h.unit ?? ''}`;
-    case 'at':    return todaySum >= 1 ? 'registrado' : 'pendiente';
-    default:      return '';
-  }
-}
 
 function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
   const ft = h.frequency_type ?? 'daily';
@@ -95,23 +84,6 @@ export function Home() {
   const [confettiKey, setConfettiKey] = useState(0);
   const [confettiActive, setConfettiActive] = useState(false);
   const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressActive = useRef(false);
-
-  function startLongPress(h: Habit) {
-    longPressTimer.current = setTimeout(() => {
-      longPressActive.current = true;
-      navigator.vibrate?.(18);
-      setContextHabit(h);
-    }, 500);
-  }
-
-  function cancelLongPress() {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }
 
   async function skipHabit(h: Habit) {
     setContextHabit(null);
@@ -423,111 +395,21 @@ export function Home() {
           </SketchBox>
         ) : (
           (() => {
-            const renderHabitCard = (h: Habit) => {
-              const sum = sumByHabit[h.id] ?? 0;
-              const done = sum >= h.goal;
-              const isSkipped = skippedIds.has(h.id);
-              const state = logStates[h.id];
-              const ringValue = h.type === 'yn' ? (sum >= 1 ? 1 : 0) : Math.min(1, sum / h.goal);
-              const valueLabel = isFuture
-                ? '—'
-                : isSkipped
-                ? '—'
-                : h.type === 'yn' ? (sum >= 1 ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : '0')
-                : h.type === 'time' ? `${sum}′`
-                : `${sum}`;
-
-              return (
-                <div
-                  key={h.id}
-                  onTouchStart={() => startLongPress(h)}
-                  onTouchEnd={cancelLongPress}
-                  onTouchMove={cancelLongPress}
-                  onMouseDown={() => startLongPress(h)}
-                  onMouseUp={cancelLongPress}
-                  onMouseLeave={cancelLongPress}
-                  onClick={() => {
-                    if (longPressActive.current) { longPressActive.current = false; return; }
-                    if (!isFuture) navigate(`/habits/${h.id}`, { state: { selectedDate } });
-                  }}
-                  style={{
-                    cursor: !isFuture ? 'pointer' : 'default',
-                    WebkitTapHighlightColor: 'transparent',
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    animation: state === 'exiting'
-                      ? 'card-exit 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards'
-                      : 'fadeIn 0.22s ease-out',
-                    overflow: state === 'exiting' ? 'hidden' : undefined,
-                  }}
-                >
-                  <SketchBox
-                    padding={14}
-                    radius={16}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      opacity: (done || isSkipped) ? 0.62 : 1,
-                      background: (done || isSkipped) ? 'rgba(255,255,255,0.4)' : 'transparent',
-                    }}
-                  >
-                    <IconTile kind={h.icon} size={50} />
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="font-display leading-none overflow-hidden text-ellipsis whitespace-nowrap"
-                        style={{
-                          fontSize: 28,
-                          textDecoration: done ? 'line-through' : 'none',
-                        }}
-                      >
-                        {h.name}
-                      </div>
-                      <div className="font-hand text-ink-soft" style={{ fontSize: 15, marginTop: 4 }}>
-                        {habitSubtitle(h, sum)}
-                      </div>
-                      {isToday && !done && h.reminders?.length > 0 && <ReminderBadge reminders={h.reminders} timezone={timezone} />}
-                    </div>
-
-                    {/* Tap-to-log area */}
-                    <div
-                      onClick={(!isFuture && !isSkipped) ? (e) => { void logHabit(h, e); } : undefined}
-                      style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 44,
-                        opacity: (!isFuture && !isSkipped) ? 1 : 0.35,
-                        pointerEvents: (!isFuture && !isSkipped) ? 'auto' : 'none',
-                      }}
-                    >
-                      <div
-                        className="font-display"
-                        style={{
-                          fontSize: 38,
-                          lineHeight: 0.95,
-                          letterSpacing: -0.5,
-                          color: done ? 'var(--ink-soft)' : (sum > 0 ? 'var(--coral)' : 'var(--ink)'),
-                          textAlign: 'center',
-                          minWidth: 36,
-                        }}
-                      >
-                        {state === 'logging' ? '…' : (state === 'done' || state === 'exiting') ? <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} /> : valueLabel}
-                      </div>
-                      {h.type !== 'yn' && !isFuture && !isSkipped && (
-                        <div style={{
-                          width: 44, height: 5, borderRadius: 999,
-                          border: '1px solid var(--ink)', overflow: 'hidden',
-                          background: 'var(--paper)',
-                        }}>
-                          <div style={{
-                            width: `${Math.min(100, ringValue * 100)}%`,
-                            height: '100%',
-                            background: done ? 'var(--ink-soft)' : 'var(--coral)',
-                            transition: 'width 320ms ease',
-                          }} />
-                        </div>
-                      )}
-                    </div>
-                  </SketchBox>
-                </div>
-              );
-            };
+            const renderHabitCard = (h: Habit) => (
+              <HabitCard
+                key={h.id}
+                habit={h}
+                sum={sumByHabit[h.id] ?? 0}
+                isSkipped={skippedIds.has(h.id)}
+                isFuture={isFuture}
+                isToday={isToday}
+                selectedDate={selectedDate}
+                timezone={timezone}
+                logState={logStates[h.id]}
+                onLog={logHabit}
+                onLongPress={setContextHabit}
+              />
+            );
 
             return (
               <>
