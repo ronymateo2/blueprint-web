@@ -212,8 +212,7 @@ export function Home() {
         payload.logged_at = from;
       }
       const entry = await api.entries.create(payload);
-      await reloadEntries();
-      await reloadStats();
+      await Promise.allSettled([reloadEntries(), reloadStats()]);
       setLogStates(prev => ({ ...prev, [habit.id]: 'done' }));
       showToast({
         id: entry.id,
