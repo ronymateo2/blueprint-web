@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PlusIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
-import { useStats } from '../hooks/useStats';
+import { useHomeStats } from '../hooks/useHomeStats';
 import { useSkips } from '../hooks/useSkips';
 import { api, type Habit } from '../api/client';
 import { SketchBox } from '../components/ui/SketchBox';
@@ -24,7 +24,7 @@ export function Home() {
   const navigate = useNavigate();
   const { timezone } = useAuthContext();
   const { habits, loading: habitsLoading, reload: reloadHabits } = useHabits();
-  const { stats, loading: statsLoading, reload: reloadStats } = useStats();
+  const { stats, loading: statsLoading, reload: reloadStats } = useHomeStats();
   const realToday = todayLocalDate(timezone);
   const [selectedDate, setSelectedDate] = useState(realToday);
   const isToday = selectedDate === realToday;

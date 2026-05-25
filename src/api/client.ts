@@ -89,6 +89,12 @@ export interface Stats {
   timezone: string;
 }
 
+export interface HomeStats {
+  todayPoints: number;
+  streak: number;
+  weeklyChart: number[];
+}
+
 export interface PointsChartBar {
   label: string;
   points: number;
@@ -155,6 +161,7 @@ export const api = {
 
   stats: {
     get: () => req<Stats>('GET', '/api/stats'),
+    getHome: () => req<HomeStats>('GET', '/api/stats/home'),
   },
 
   points: {
