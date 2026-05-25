@@ -108,6 +108,13 @@ export interface PointsChartBar {
 }
 
 export interface PointsData {
+  totalPoints: number;
+  streak: number;
+  level: number;
+  levelXp: number;
+  levelNext: number;
+  todayPoints: number;
+  weekPct: number;
   dayChart: PointsChartBar[];
   weekChart: PointsChartBar[];
   monthChart: PointsChartBar[];

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '@phosphor-icons/react';
-import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
 import { usePoints } from '../hooks/usePoints';
 import { SketchBox } from '../components/ui/SketchBox';
@@ -89,7 +88,6 @@ function HeatCell({ v, size = 9 }: { v: number; size?: number }) {
 
 export function Points() {
   const navigate = useNavigate();
-  const { stats, loading: statsLoading } = useStats();
   const { habits } = useHabits();
   const { data: pointsData, loading: pointsLoading } = usePoints();
   const [period, setPeriod] = useState<Period>('week');
@@ -99,7 +97,7 @@ export function Points() {
   const shouldTruncate = activeHabits.length > 5;
   const visibleHabits = shouldTruncate && !showAll ? activeHabits.slice(0, 4) : activeHabits;
 
-  if (statsLoading || pointsLoading || !stats || !pointsData) {
+  if (pointsLoading || !pointsData) {
     return (
       <div className="screen items-center justify-center">
         <span className="font-hand text-ink-soft">Cargando…</span>
@@ -107,7 +105,7 @@ export function Points() {
     );
   }
 
-  const xpPct = stats.levelXp / (stats.levelNext || 1);
+  const xpPct = pointsData.levelXp / (pointsData.levelNext || 1);
 
   const bars: PointsChartBar[] =
     period === 'day'   ? pointsData.dayChart :
@@ -165,7 +163,7 @@ export function Points() {
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span className="font-display" style={{ fontSize: 58, lineHeight: 0.85, letterSpacing: -1.5 }}>
-                  {stats.totalPoints.toLocaleString('es')}
+                  {pointsData.totalPoints.toLocaleString('es')}
                 </span>
                 <span className="font-display" style={{ fontSize: 22, color: 'var(--ink-soft)' }}>XP</span>
               </div>
@@ -173,10 +171,10 @@ export function Points() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 8, marginBottom: 2 }}>
             <span className="font-hand text-ink-soft" style={{ fontSize: 14 }}>
-              nivel {stats.level}
+              nivel {pointsData.level}
             </span>
             <span className="font-mono text-ink-soft" style={{ fontSize: 12 }}>
-              {stats.levelXp} / {stats.levelNext} XP ({Math.round(xpPct * 100)}%)
+              {pointsData.levelXp} / {pointsData.levelNext} XP ({Math.round(xpPct * 100)}%)
             </span>
           </div>
           <div style={{ height: 14, border: '1.6px solid var(--ink)', borderRadius: 7, overflow: 'hidden', background: 'var(--paper)', position: 'relative' }}>
@@ -187,16 +185,16 @@ export function Points() {
             }} />
           </div>
           <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 4 }}>
-            Faltan {stats.levelNext - stats.levelXp} pts para nivel {stats.level + 1}
+            Faltan {pointsData.levelNext - pointsData.levelXp} pts para nivel {pointsData.level + 1}
           </div>
         </SketchBox>
 
         {/* Stat row */}
         <div style={{ display: 'flex', gap: 8 }}>
           {[
-            { icon: 'fire',   value: stats.streak,      unit: 'd', label: 'racha',  accent: stats.streak >= 3 },
-            { icon: 'bolt',   value: stats.todayPoints,  unit: '',  label: 'hoy',   accent: false },
-            { icon: 'target', value: stats.weekPct,      unit: '%', label: 'semana',accent: false },
+            { icon: 'fire',   value: pointsData.streak,      unit: 'd', label: 'racha',  accent: pointsData.streak >= 3 },
+            { icon: 'bolt',   value: pointsData.todayPoints,  unit: '',  label: 'hoy',   accent: false },
+            { icon: 'target', value: pointsData.weekPct,      unit: '%', label: 'semana',accent: false },
           ].map((s, i) => (
             <SketchBox
               key={i}
