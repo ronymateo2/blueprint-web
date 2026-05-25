@@ -1,17 +1,10 @@
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8787';
 
-function getToken(): string | null {
-  return localStorage.getItem('habit_token');
-}
-
 async function req<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = getToken();
   const res = await fetch(`${BASE}${path}`, {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
@@ -128,7 +121,8 @@ export const api = {
   auth: {
     googleUrl: () => `${BASE}/api/auth/google`,
     me: () => req<User>('GET', '/api/auth/me'),
-    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User & { token?: string }>('PATCH', '/api/auth/me', data),
+    logout: () => req<{ ok: boolean }>('POST', '/api/auth/logout'),
+    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User>('PATCH', '/api/auth/me', data),
   },
 
   habits: {

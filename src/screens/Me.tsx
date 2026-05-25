@@ -106,8 +106,7 @@ export function Me() {
 
   async function saveTz() {
     setSaving(true);
-    const result = await api.auth.patchMe({ timezone: tz });
-    if (result.token) localStorage.setItem('habit_token', result.token);
+    await api.auth.patchMe({ timezone: tz });
     setUser({ ...user!, timezone: tz });
     setSaving(false);
     setEditingTz(false);

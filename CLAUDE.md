@@ -59,7 +59,7 @@ src/
       ConfettiBurst.tsx # Celebration animation on habit completion
   screens/            # Route-level components
     Login.tsx         # "Continuar con Google" OAuth redirect
-    AuthCallback.tsx  # Reads ?token= from URL, saves to localStorage
+    AuthCallback.tsx  # Calls /api/auth/me to verify cookie, redirects to / or /login
     Home.tsx          # Dashboard: habit list + rings
     QuickAction.tsx   # Full-screen big circle (log a habit)
     Points.tsx        # XP card + bar chart + heatmap
@@ -71,13 +71,13 @@ src/
     Archive.tsx       # Archived habits list
     Me.tsx            # Profile + timezone + logout
   hooks/
-    useAuth.ts        # Verifies token via /api/auth/me; removes token on 401
+    useAuth.ts        # Verifies session via /api/auth/me; clears user on 401
     useHabits.ts      # Fetches and caches habit list
     useEntries.ts     # Fetches entries with from/to/habitId filters
     useStats.ts       # Fetches aggregated stats
     useUndo.ts        # Toast state management for undo actions
   api/
-    client.ts         # Typed fetch wrappers; reads token from localStorage
+    client.ts         # Typed fetch wrappers; credentials: 'include' on every request
   App.tsx             # BrowserRouter + ProtectedRoute + all routes
   main.tsx            # ReactDOM.createRoot (StrictMode on) + registerSW() PWA auto-update
 public/
@@ -86,11 +86,13 @@ public/
 
 ## Auth
 
-Token stored in `localStorage["habit_token"]`. Set by `AuthCallback` after Google OAuth redirect. Sent as `Authorization: Bearer <token>` on every API request.
+JWT stored in an **HttpOnly cookie** set by the API Worker after Google OAuth. All requests use `credentials: 'include'` — no token in localStorage, no `Authorization` header.
 
-**Critical:** `AuthCallback` uses `useLocation().search` (from React Router), NOT `window.location.search`. Reason: React 18 StrictMode double-invokes effects — if the first invocation calls `navigate('/')`, `window.location.search` is already cleared by the time the second invocation runs, causing a redirect to `/login`. `useLocation` captures URL at render time and is stable across double-invokes.
+`AuthCallback` calls `api.auth.me()` on mount. If the cookie is valid, navigates to `/`; otherwise to `/login`. No URL params needed.
 
-`useAuth` removes the token only when the API returns a network-level failure or HTTP error. The `ProtectedRoute` in `App.tsx` redirects to `/login` if `user` is null after loading.
+Logout calls `POST /api/auth/logout` (clears the cookie server-side) then sets `user` to null client-side.
+
+`AuthContext.reload()` calls `api.auth.me()` unconditionally on mount. On 401 (or network error), sets `user` to null. The `ProtectedRoute` in `App.tsx` redirects to `/login` if `user` is null after loading.
 
 ## Routing
 
@@ -183,8 +185,7 @@ queryClient.invalidateQueries({ queryKey: ['key'] });
 | Keep `tokens.css` `:root` vars | Components with computed colors (e.g., `border: \`1.6px solid ${c}\``) still need `var(--ink)` inline |
 | PWA `autoUpdate` + 60s poll | Silently refreshes on new deploy without user prompt; poll catches long-open sessions |
 | React Query for shared low-churn data | Multiple components consuming same endpoint caused N parallel fetches; React Query deduplicates and caches. Use for data that rarely changes (`habits`). Keep plain `useState+useEffect` for component-local or frequently-mutated data. |
-| LocalStorage for token | Simple; no cookie complexity needed for a Cloudflare Pages setup |
-| React Router `useLocation` in AuthCallback | StrictMode double-invoke would clear `window.location.search` before second effect run |
+| HttpOnly cookie for JWT | Eliminates XSS token theft; set by API Worker, cleared via `POST /api/auth/logout` |
 | `public/_redirects` for SPA routing | Cloudflare Pages serves `index.html` for all routes, enabling client-side navigation |
 | `components/ui/` + `components/habits/` split | `ui/` = zero domain knowledge (reusable anywhere); `habits/` = knows Habit/Reminder types. Prevents domain logic from leaking into primitives. |
 | `HabitForm` in `components/habits/` not `screens/` | Used by two screens (CreateHabit, EditHabit) — belongs in components, not screens |

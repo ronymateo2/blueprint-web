@@ -1,20 +1,15 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { api } from '../api/client';
 
 export function AuthCallback() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    if (token) {
-      localStorage.setItem('habit_token', token);
-      navigate('/', { replace: true });
-    } else {
-      navigate('/login', { replace: true });
-    }
-  }, [navigate, location.search]);
+    api.auth.me()
+      .then(() => navigate('/', { replace: true }))
+      .catch(() => navigate('/login', { replace: true }));
+  }, [navigate]);
 
   return (
     <div className="screen items-center justify-center">

@@ -1,18 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { api, type User } from '../api/client';
 
-function timezoneFromToken(): string | null {
-  const token = localStorage.getItem('habit_token');
-  if (!token) return null;
-  try {
-    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(atob(b64)) as { timezone?: string };
-    return payload.timezone ?? null;
-  } catch {
-    return null;
-  }
-}
-
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
@@ -29,13 +17,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(async () => {
-    const token = localStorage.getItem('habit_token');
-    if (!token) { setLoading(false); return; }
     try {
       const me = await api.auth.me();
       setUser(me);
     } catch {
-      localStorage.removeItem('habit_token');
       setUser(null);
     } finally {
       setLoading(false);
@@ -45,11 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { void reload(); }, [reload]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('habit_token');
+    api.auth.logout().catch(() => {});
     setUser(null);
   }, []);
 
-  const timezone = user?.timezone ?? timezoneFromToken() ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone = user?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <AuthContext.Provider value={{ user, loading, timezone, reload, logout, setUser }}>
