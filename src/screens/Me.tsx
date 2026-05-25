@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FireIcon, CaretRight } from '@phosphor-icons/react';
 import { useAuthContext } from '../context/AuthContext';
-import { useStats } from '../hooks/useStats';
 import { useHabits } from '../hooks/useHabits';
-import { api, type Habit } from '../api/client';
+import { api, type Habit, type MeStats } from '../api/client';
 import { SketchBox } from '../components/ui/SketchBox';
 import { HandIcon } from '../components/ui/HandIcon';
 import { Scribble } from '../components/ui/Scribble';
@@ -68,7 +67,6 @@ function SettingsRow({
 
 export function Me() {
   const { user, logout, setUser } = useAuthContext();
-  const { stats, loading: loadingStats } = useStats();
   const { habits, loading: loadingHabits } = useHabits();
   const navigate = useNavigate();
   const [editingTz, setEditingTz] = useState(false);
@@ -76,6 +74,8 @@ export function Me() {
   const [saving, setSaving] = useState(false);
   const [archivedHabits, setArchivedHabits] = useState<Habit[]>([]);
   const [loadingArchived, setLoadingArchived] = useState(true);
+  const [stats, setStats] = useState<MeStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [editingFont, setEditingFont] = useState(false);
   const [displayFont, setDisplayFont] = useState(
     () => localStorage.getItem('habit_display_font') ?? DISPLAY_FONTS[0].value
@@ -84,6 +84,10 @@ export function Me() {
   const [handFont, setHandFont] = useState(
     () => localStorage.getItem('habit_hand_font') ?? HAND_FONTS[0].value
   );
+
+  useEffect(() => {
+    void api.stats.getMe().then(setStats).finally(() => setLoadingStats(false));
+  }, []);
 
   useEffect(() => {
     setLoadingArchived(true);

@@ -95,6 +95,12 @@ export interface HomeStats {
   weeklyChart: number[];
 }
 
+export interface MeStats {
+  totalPoints: number;
+  streak: number;
+  level: number;
+}
+
 export interface PointsChartBar {
   label: string;
   points: number;
@@ -162,6 +168,7 @@ export const api = {
   stats: {
     get: () => req<Stats>('GET', '/api/stats'),
     getHome: () => req<HomeStats>('GET', '/api/stats/home'),
+    getMe: () => req<MeStats>('GET', '/api/stats/me'),
   },
 
   points: {
