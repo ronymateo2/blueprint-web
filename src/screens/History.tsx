@@ -16,7 +16,9 @@ import {
 } from "../lib/dateUtils";
 import { useAuthContext } from "../context/AuthContext";
 
-const TABS = ["Día", "Semana", "Mes", "Año"];
+const TABS = ["Día", "Semana", "Mes"];
+const TAB_SECTION_LABELS = ["HOY", "ESTA SEMANA", "ESTE MES"];
+const TAB_DAYS = [0, 6, 59];
 
 function formatDateHeader(dateStr: string, timezone: string): string {
   const today = todayLocalDate(timezone);
@@ -36,35 +38,43 @@ export function History() {
   const { timezone } = useAuthContext();
   const { habits, loading: loadingHabits } = useHabits();
   const navigate = useNavigate();
-  const tabDays = [0, 6, 29, 364];
-  const from = localDayUtcRange(
-    daysAgoLocalDate(tabDays[activeTab], timezone),
-    timezone,
-  ).from;
-  const { entries: recentEntries, loading: loadingRecent } = useEntries({
-    from,
-  });
-  const { entries: heatmapEntries, loading: loadingHeatmap } = useEntries({
-    from: localDayUtcRange(daysAgoLocalDate(97, timezone), timezone).from,
+
+  // Base fetch: 28 days — covers heatmap + Día + Semana tabs
+  const base28From = localDayUtcRange(daysAgoLocalDate(27, timezone), timezone).from;
+  const { entries: baseEntries, loading: loadingBase } = useEntries({ from: base28From });
+
+  // Mes fetch: 60 days, only when tab 2 is active
+  const mes60From = localDayUtcRange(daysAgoLocalDate(59, timezone), timezone).from;
+  const { entries: mesEntries, loading: loadingMes } = useEntries({
+    from: mes60From,
+    enabled: activeTab === 2,
   });
 
   function habitHeatmap(habitId: string): number[] {
     const byDay: Record<string, number> = {};
-    heatmapEntries
+    baseEntries
       .filter((e) => e.habit_id === habitId)
       .forEach((e) => {
         const d = utcToLocalDate(e.logged_at, timezone);
         byDay[d] = (byDay[d] ?? 0) + 1;
       });
     const vals: number[] = [];
-    for (let i = 97; i >= 0; i--) {
+    for (let i = 27; i >= 0; i--) {
       const d = daysAgoLocalDate(i, timezone);
       vals.push(Math.min(1, (byDay[d] ?? 0) * 0.5));
     }
     return vals;
   }
 
-  const recent = recentEntries.slice(0, 20);
+  const tabFrom = localDayUtcRange(
+    daysAgoLocalDate(TAB_DAYS[activeTab], timezone),
+    timezone,
+  ).from;
+  const feedEntries = activeTab === 2
+    ? mesEntries
+    : baseEntries.filter((e) => e.logged_at >= tabFrom);
+  const loadingFeed = activeTab === 2 ? loadingMes : loadingBase;
+  const recent = feedEntries.slice(0, 50);
 
   // Group recent entries by local date
   const groupedRecent: { dateStr: string; items: typeof recent }[] = [];
@@ -126,22 +136,6 @@ export function History() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-[6px]" style={{ padding: "8px 14px 12px" }}>
-        {TABS.map((t, i) => (
-          <Btn
-            key={t}
-            variant="segment"
-            active={i === activeTab}
-            onClick={() => setActiveTab(i)}
-            className="flex-1"
-            style={{ padding: "8px 0", fontSize: 15 }}
-          >
-            {t}
-          </Btn>
-        ))}
-      </div>
-
       <div
         className="screen-scroll flex flex-col gap-[16px]"
         style={{ padding: "8px 14px 100px" }}
@@ -159,7 +153,7 @@ export function History() {
           >
             Calor por Hábito · 4 semanas
           </div>
-          {loadingHabits || loadingHeatmap ? (
+          {loadingHabits || loadingBase ? (
             <div className="flex flex-col gap-[10px]">
               <HeatmapRowSkeleton />
               <HeatmapRowSkeleton />
@@ -179,8 +173,8 @@ export function History() {
           ) : (
             <div className="flex flex-col gap-[10px]">
               {habits.map((h) => {
-                const cells = habitHeatmap(h.id).slice(-28); // 4 weeks
-                const habitEntries = heatmapEntries.filter(
+                const cells = habitHeatmap(h.id);
+                const habitEntries = baseEntries.filter(
                   (e) => e.habit_id === h.id,
                 );
                 const totalLogs = habitEntries.length;
@@ -285,17 +279,34 @@ export function History() {
         {/* Recent events */}
         <div>
           <div
-            className="font-hand text-ink-soft"
             style={{
-              fontSize: 12,
-              letterSpacing: 0.6,
-              padding: "4px 4px 6px",
-              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "4px 4px 8px",
             }}
           >
-            RECIENTES
+            <div
+              className="font-hand text-ink-soft"
+              style={{ fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase" }}
+            >
+              {TAB_SECTION_LABELS[activeTab]}
+            </div>
+            <div className="flex gap-[4px]">
+              {TABS.map((t, i) => (
+                <Btn
+                  key={t}
+                  variant="segment"
+                  active={i === activeTab}
+                  onClick={() => setActiveTab(i)}
+                  style={{ padding: "4px 10px", fontSize: 13 }}
+                >
+                  {t}
+                </Btn>
+              ))}
+            </div>
           </div>
-          {loadingRecent ? (
+          {loadingFeed ? (
             <RecentLogsSkeleton />
           ) : groupedRecent.length === 0 ? (
             <SketchBox

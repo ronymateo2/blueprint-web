@@ -5,13 +5,16 @@ interface UseEntriesOptions {
   habitId?: string;
   from?: string;
   to?: string;
+  enabled?: boolean;
 }
 
 export function useEntries(opts: UseEntriesOptions = {}) {
+  const enabled = opts.enabled !== false;
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const load = useCallback(async (showLoading = true) => {
+    if (!enabled) return;
     if (showLoading) setLoading(true);
     try {
       const data = await api.entries.list({ habit_id: opts.habitId, from: opts.from, to: opts.to });
@@ -19,7 +22,7 @@ export function useEntries(opts: UseEntriesOptions = {}) {
     } finally {
       if (showLoading) setLoading(false);
     }
-  }, [opts.habitId, opts.from, opts.to]);
+  }, [enabled, opts.habitId, opts.from, opts.to]);
 
   useEffect(() => { void load(); }, [load]);
 
