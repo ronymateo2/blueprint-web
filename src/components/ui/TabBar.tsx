@@ -6,6 +6,7 @@ import { useNavDirection } from '../../context/NavContext';
 const TABS = [
   { id: 'home', icon: 'sun', label: 'Hoy', path: '/' },
   { id: 'hist', icon: 'clock', label: 'Histórico', path: '/history' },
+  { id: 'idy', icon: 'identity', label: 'Identidad', path: '/identity' },
   { id: 'pts', icon: 'star', label: 'Puntos', path: '/points' },
   { id: 'me', icon: 'heart', label: 'Yo', path: '/me' },
 ];
@@ -18,6 +19,7 @@ export function TabBar() {
   const activeId =
     pathname === '/' ? 'home'
     : pathname.startsWith('/history') ? 'hist'
+    : pathname.startsWith('/identity') ? 'idy'
     : pathname.startsWith('/points') ? 'pts'
     : pathname.startsWith('/me') ? 'me'
     : 'home';

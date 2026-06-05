@@ -22,6 +22,7 @@ export interface User {
   display_name: string | null;
   avatar_url: string | null;
   timezone: string;
+  identity: string | null;
 }
 
 export interface Reminder {
@@ -47,6 +48,8 @@ export interface Habit {
   archived_at: string | null;
   start_date: string | null;
   end_date: string | null;
+  identity: string | null;
+  min_action: string | null;
   created_at: string;
   updated_at: string;
   reminders: Reminder[];
@@ -60,6 +63,7 @@ export interface Entry {
   points: number;
   logged_at: string;
   note: string | null;
+  alignment: 'yes' | 'maybe' | 'no' | null;
   created_at: string;
   habit_name?: string;
   habit_icon?: string;
@@ -122,13 +126,13 @@ export const api = {
     googleUrl: () => `${BASE}/api/auth/google`,
     me: () => req<User>('GET', '/api/auth/me'),
     logout: () => req<{ ok: boolean }>('POST', '/api/auth/logout'),
-    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name'>>) => req<User>('PATCH', '/api/auth/me', data),
+    patchMe: (data: Partial<Pick<User, 'timezone' | 'display_name' | 'identity'>>) => req<User>('PATCH', '/api/auth/me', data),
   },
 
   habits: {
     list: (archived = false) => req<Habit[]>('GET', `/api/habits${archived ? '?archived=1' : ''}`),
     get: (id: string) => req<Habit>('GET', `/api/habits/${id}`),
-    create: (data: Omit<Habit, 'id' | 'user_id' | 'archived_at' | 'created_at' | 'updated_at' | 'reminders'>) =>
+    create: (data: Omit<Habit, 'id' | 'user_id' | 'archived_at' | 'created_at' | 'updated_at' | 'reminders' | 'identity' | 'min_action'>) =>
       req<Habit>('POST', '/api/habits', data),
     update: (id: string, data: Partial<Omit<Habit, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) =>
       req<Habit>('PUT', `/api/habits/${id}`, data),
@@ -154,7 +158,7 @@ export const api = {
       if (params?.habit_id) q.set('habit_id', params.habit_id);
       return req<Entry[]>('GET', `/api/entries?${q}`);
     },
-    create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string }) =>
+    create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string; alignment?: 'yes' | 'maybe' | 'no' | null }) =>
       req<Entry>('POST', '/api/entries', data),
     delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/entries/${id}`),
   },

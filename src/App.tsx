@@ -14,6 +14,9 @@ import { History } from './screens/History';
 import { CreateHabit } from './screens/CreateHabit';
 import { EditHabit } from './screens/EditHabit';
 import { Me } from './screens/Me';
+import { Identity } from './screens/Identity';
+import { IdentityHabit } from './screens/IdentityHabit';
+import { IdentityRegister } from './screens/IdentityRegister';
 import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
 import { HabitStatistics } from './screens/HabitStatistics';
@@ -35,7 +38,7 @@ const ANIM: Record<NavDirection, string> = {
   up:    'screenFade',
 };
 
-const TAB_ROUTES = new Set(['/', '/history', '/points', '/me']);
+const TAB_ROUTES = new Set(['/', '/history', '/identity', '/points', '/me']);
 
 function AppLayout() {
   const location = useLocation();
@@ -78,6 +81,9 @@ function AppLayout() {
           <Route path="/habits/:id/edit" element={<ProtectedRoute><EditHabit /></ProtectedRoute>} />
           <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="/identity" element={<ProtectedRoute><Identity /></ProtectedRoute>} />
+          <Route path="/identity/:habitId" element={<ProtectedRoute><IdentityHabit /></ProtectedRoute>} />
+          <Route path="/identity/:habitId/registrar" element={<ProtectedRoute><IdentityRegister /></ProtectedRoute>} />
           <Route path="/me" element={<ProtectedRoute><Me /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

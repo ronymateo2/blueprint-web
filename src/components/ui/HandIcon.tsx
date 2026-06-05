@@ -39,6 +39,7 @@ import {
   SprayBottleIcon,
   MapPinIcon,
   DesktopTowerIcon,
+  UserFocusIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -83,6 +84,7 @@ const ICONS: Record<string, Icon> = {
   spray:    SprayBottleIcon,
   pin:      MapPinIcon,
   desktop:  DesktopTowerIcon,
+  identity: UserFocusIcon,
 };
 
 interface HandIconProps {
