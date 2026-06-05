@@ -75,6 +75,15 @@ export interface Skip {
   local_date: string;
 }
 
+export type FrictionCause = 'no_time' | 'tired' | 'forgot' | 'mood' | 'other';
+
+export interface FrictionLog {
+  habit_id: string;
+  local_date: string;
+  cause: FrictionCause;
+  note: string | null;
+}
+
 export interface Stats {
   totalPoints: number;
   todayPoints: number;
@@ -169,6 +178,17 @@ export const api = {
     listByHabit: (habit_id: string) => req<Skip[]>('GET', `/api/skips?habit_id=${encodeURIComponent(habit_id)}`),
     create: (habit_id: string, local_date: string) => req<Skip>('POST', '/api/skips', { habit_id, local_date }),
     delete: (habit_id: string, local_date: string) => req<{ ok: boolean }>('DELETE', `/api/skips/${encodeURIComponent(habit_id)}?local_date=${encodeURIComponent(local_date)}`),
+  },
+
+  friction: {
+    list: (habit_id: string, from?: string, to?: string) => {
+      const q = new URLSearchParams({ habit_id });
+      if (from) q.set('from', from);
+      if (to) q.set('to', to);
+      return req<FrictionLog[]>('GET', `/api/friction?${q}`);
+    },
+    save: (data: { habit_id: string; local_date: string; cause: FrictionCause; note?: string | null }) =>
+      req<FrictionLog>('POST', '/api/friction', data),
   },
 
   stats: {

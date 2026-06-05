@@ -76,17 +76,26 @@ export function buildDayEvidence(day: DayState, returnedAfterFail: boolean, iden
   const s: string[] = [];
   const acted = day.effort !== 'none';
 
-  if (acted) s.push('No abandonaste tu hábito');
-  if (day.effort === 'min') s.push(day.energy === 'hard' ? 'Usaste la versión mínima en un día difícil' : 'Usaste la versión mínima');
-  if (acted && day.energy === 'hard') s.push('Mantuviste tu identidad a pesar del cansancio');
-  if (returnedAfterFail && acted) s.push('Volviste después de fallar — no abandonas, regresas y ajustas');
-  if (day.alignment === 'yes') s.push('Esto se sintió como la persona que quieres ser');
-  if (day.effort === 'full' && day.energy === 'good') s.push('Diste lo mejor en un buen día');
-  if (!acted) s.push('Registraste tu día — eso ya es no abandonar. Mañana ajustas y vuelves.');
+  if (acted) {
+    s.push('No abandonaste tu hábito');
+    if (day.effort === 'min') s.push(day.energy === 'hard' ? 'Usaste la versión mínima en un día difícil' : 'Usaste la versión mínima');
+    if (day.energy === 'hard') s.push('Mantuviste tu identidad a pesar del cansancio');
+    if (returnedAfterFail) s.push('Volviste después de fallar — no abandonas, regresas y ajustas');
+    if (day.alignment === 'yes') s.push('Esto se sintió como la persona que quieres ser');
+    if (day.effort === 'full' && day.energy === 'good') s.push('Diste lo mejor en un buen día');
+  } else {
+    // Día sin registro: proteger la autoimagen, mantener continuidad, invitar al retorno.
+    s.push('Hoy no salió como esperabas — y está bien.');
+    s.push('Todavía estás en proceso. No rompiste nada.');
+    s.push('Las personas consistentes no son perfectas; vuelven más rápido.');
+    s.push('Puedes volver ahora: una acción mínima ya cuenta.');
+  }
 
-  let proofOfDay = 'Eres alguien que no abandona';
-  if (returnedAfterFail) proofOfDay = 'Eres alguien que regresa y ajusta';
+  let proofOfDay: string;
+  if (!acted) proofOfDay = 'Sigues entrenando tu consistencia';
+  else if (returnedAfterFail) proofOfDay = 'Eres alguien que regresa y ajusta';
   else if (day.effort === 'full' && identity) proofOfDay = identity;
+  else proofOfDay = 'Eres alguien que no abandona';
 
   return { statements: [...new Set(s)], proofOfDay, acted };
 }

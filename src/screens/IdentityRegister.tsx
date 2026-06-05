@@ -149,12 +149,18 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
       <div className="screen-scroll flex flex-col gap-[16px]" style={{ padding: '8px 14px 24px' }}>
         <div className="flex flex-col items-center text-center" style={{ marginTop: 12, gap: 10 }}>
           <CheckCircleIcon size={64} weight="fill" color="var(--coral)" />
-          <div className="font-display" style={{ fontSize: 28, lineHeight: 1.05 }}>¡Gracias por no abandonar!</div>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 15 }}>Esto también es parte de tu identidad.</div>
+          <div className="font-display" style={{ fontSize: 28, lineHeight: 1.05 }}>
+            {saved.acted ? '¡Gracias por no abandonar!' : 'Hoy no salió como esperabas'}
+          </div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 15 }}>
+            {saved.acted ? 'Esto también es parte de tu identidad.' : 'Las personas consistentes vuelven más rápido.'}
+          </div>
         </div>
 
         <SketchBox padding={16} radius={16}>
-          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 10 }}>Evidencia generada</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 10 }}>
+            {saved.acted ? 'Evidencia generada' : 'Recuerda esto'}
+          </div>
           <EvidenceList statements={saved.statements} />
         </SketchBox>
 
