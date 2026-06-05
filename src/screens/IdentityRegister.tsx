@@ -264,16 +264,20 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
       </SketchBox>
 
       {/* Notes */}
-      <div className="font-hand text-ink-soft" style={{ fontSize: 13, padding: '0 4px' }}>Notas rápidas (opcional)</div>
-      <textarea
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        rows={2}
-        maxLength={500}
-        placeholder="¿Qué aprendiste hoy?"
-        className="font-hand text-ink"
-        style={NOTE_STYLE}
-      />
+      <SketchBox padding={14} radius={16}>
+        <div className="font-hand" style={{ fontSize: 16, lineHeight: 1.2 }}>
+          Notas rápidas <span className="text-ink-soft" style={{ fontSize: 13 }}>(opcional)</span>
+        </div>
+        <textarea
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+          maxLength={500}
+          placeholder="¿Qué aprendiste hoy?"
+          className="font-hand text-ink"
+          style={{ ...NOTE_STYLE, border: 'none', padding: '8px 0 0 0', borderRadius: 0 }}
+        />
+      </SketchBox>
 
       <Btn
         variant="primary"
