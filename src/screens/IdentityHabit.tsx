@@ -1,15 +1,29 @@
-import { useState, type CSSProperties } from 'react';
+import { useState, useMemo, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, PencilSimpleIcon, PlayIcon } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { HABITS_KEY, useHabits } from '../hooks/useHabits';
 import { useNavDirection } from '../context/NavContext';
+import { useAuthContext } from '../context/AuthContext';
+import { useEntries } from '../hooks/useEntries';
+import { utcToLocalDate, todayLocalDate, addDays, localDayUtcRange } from '../lib/dateUtils';
+import { isHabitDueOnDate } from '../lib/habitUtils';
 import { SketchBox } from '../components/ui/SketchBox';
+import { Ring } from '../components/ui/Ring';
 import { Btn } from '../components/ui/Btn';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { IconTile } from '../components/habits/IconTile';
 import { MentalRehearsalSheet } from '../components/identity/MentalRehearsalSheet';
+
+function LegendRow({ color, label }: { color: string; label: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      <span className="font-hand" style={{ fontSize: 14 }}>{label}</span>
+    </div>
+  );
+}
 
 const INPUT_STYLE: CSSProperties = {
   width: '100%', boxSizing: 'border-box',
@@ -26,6 +40,42 @@ export function IdentityHabit() {
   const { habits, loading } = useHabits();
 
   const habit = habits.find((h) => h.id === habitId);
+  const { timezone } = useAuthContext();
+
+  const { weekFrom, weekTo, weekDays } = useMemo(() => {
+    const today = todayLocalDate(timezone);
+    const dow = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7; // Mon=0, Sun=6
+    const monday = addDays(today, -dow);
+    const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+    return {
+      weekFrom: localDayUtcRange(days[0], timezone).from,
+      weekTo: localDayUtcRange(days[6], timezone).to,
+      weekDays: days,
+    };
+  }, [timezone]);
+
+  const { entries: weekEntries } = useEntries({ habitId, from: weekFrom, to: weekTo });
+
+  const weekStats = useMemo(() => {
+    if (!habit) return { completados: 0, parcial: 0, fallado: 0, total: 0 };
+    const today = todayLocalDate(timezone);
+    const byDate: Record<string, number> = {};
+    for (const e of weekEntries) {
+      const d = utcToLocalDate(e.logged_at, timezone);
+      byDate[d] = (byDate[d] ?? 0) + e.value;
+    }
+    let completados = 0, parcial = 0, fallado = 0, total = 0;
+    for (const day of weekDays) {
+      if (!isHabitDueOnDate(habit, day, timezone)) continue;
+      total++;
+      if (day > today) continue;
+      const sum = byDate[day] ?? 0;
+      if (sum >= habit.goal) completados++;
+      else if (sum > 0) parcial++;
+      else fallado++;
+    }
+    return { completados, parcial, fallado, total };
+  }, [weekEntries, weekDays, habit, timezone]);
 
   const [editOpen, setEditOpen] = useState(false);
   const [identityText, setIdentityText] = useState('');
@@ -116,6 +166,26 @@ export function IdentityHabit() {
           </div>
           <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 10 }}>
             Cada vez que lo haces, demuestras quién eres.
+          </div>
+        </SketchBox>
+
+        {/* Weekly progress */}
+        <SketchBox padding={14} radius={16}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 10 }}>Progreso esta semana</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Ring
+              size={90}
+              value={weekStats.total > 0 ? weekStats.completados / weekStats.total : 0}
+              color="var(--coral)"
+              stroke={8}
+              label={weekStats.total > 0 ? `${Math.round((weekStats.completados / weekStats.total) * 100)}%` : '—'}
+              labelSize={22}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <LegendRow color="#7cbf6e" label={`${weekStats.completados} ${weekStats.completados === 1 ? 'completado' : 'completados'}`} />
+              <LegendRow color="var(--ink-soft)" label={`${weekStats.parcial} ${weekStats.parcial === 1 ? 'parcial' : 'parciales'}`} />
+              <LegendRow color="var(--coral)" label={`${weekStats.fallado} ${weekStats.fallado === 1 ? 'fallado' : 'fallados'}`} />
+            </div>
           </div>
         </SketchBox>
 
