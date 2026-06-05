@@ -5,9 +5,10 @@ interface BottomSheetProps {
   onClose: () => void;
   children: React.ReactNode;
   dismissable?: boolean;
+  maxHeight?: string;
 }
 
-export function BottomSheet({ open, onClose, children, dismissable = true }: BottomSheetProps) {
+export function BottomSheet({ open, onClose, children, dismissable = true, maxHeight = '85%' }: BottomSheetProps) {
   const [render, setRender] = useState(open);
   const [visible, setVisible] = useState(false);
 
@@ -48,7 +49,7 @@ export function BottomSheet({ open, onClose, children, dismissable = true }: Bot
           borderTopLeftRadius: 22, borderTopRightRadius: 22,
           boxShadow: '0 -10px 26px rgba(0,0,0,0.08)',
           padding: '8px 18px 28px',
-          maxHeight: '85%', overflow: 'auto',
+          maxHeight, overflow: 'auto',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 280ms cubic-bezier(.18,.85,.25,1.05)',
         }}
