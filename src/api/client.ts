@@ -64,6 +64,7 @@ export interface Entry {
   logged_at: string;
   note: string | null;
   alignment: 'yes' | 'maybe' | 'no' | null;
+  day_energy: 'good' | 'ok' | 'hard' | null;
   created_at: string;
   habit_name?: string;
   habit_icon?: string;
@@ -158,7 +159,7 @@ export const api = {
       if (params?.habit_id) q.set('habit_id', params.habit_id);
       return req<Entry[]>('GET', `/api/entries?${q}`);
     },
-    create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string; alignment?: 'yes' | 'maybe' | 'no' | null }) =>
+    create: (data: { habit_id: string; value?: number; note?: string; logged_at?: string; alignment?: 'yes' | 'maybe' | 'no' | null; day_energy?: 'good' | 'ok' | 'hard' | null }) =>
       req<Entry>('POST', '/api/entries', data),
     delete: (id: string) => req<{ ok: boolean }>('DELETE', `/api/entries/${id}`),
   },

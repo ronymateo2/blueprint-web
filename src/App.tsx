@@ -17,6 +17,9 @@ import { Me } from './screens/Me';
 import { Identity } from './screens/Identity';
 import { IdentityHabit } from './screens/IdentityHabit';
 import { IdentityRegister } from './screens/IdentityRegister';
+import { TodayEvidence } from './screens/TodayEvidence';
+import { AccumulatedEvidence } from './screens/AccumulatedEvidence';
+import { IdentityProgress } from './screens/IdentityProgress';
 import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
 import { HabitStatistics } from './screens/HabitStatistics';
@@ -52,7 +55,9 @@ function AppLayout() {
   const anim = ANIM[getDirection()] ?? 'screenFade';
   // show tabbar on main tabs + quickaction (but not on sub-screens or login)
   const showTabBar = TAB_ROUTES.has(location.pathname) ||
-    /^\/habits\/[^/]+$/.test(location.pathname);
+    /^\/habits\/[^/]+$/.test(location.pathname) ||
+    /^\/identity\/[^/]+$/.test(location.pathname) ||
+    /^\/identity\/[^/]+\/(evidencia|progreso)/.test(location.pathname);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
@@ -84,6 +89,9 @@ function AppLayout() {
           <Route path="/identity" element={<ProtectedRoute><Identity /></ProtectedRoute>} />
           <Route path="/identity/:habitId" element={<ProtectedRoute><IdentityHabit /></ProtectedRoute>} />
           <Route path="/identity/:habitId/registrar" element={<ProtectedRoute><IdentityRegister /></ProtectedRoute>} />
+          <Route path="/identity/:habitId/evidencia/hoy" element={<ProtectedRoute><TodayEvidence /></ProtectedRoute>} />
+          <Route path="/identity/:habitId/evidencia/acumulada" element={<ProtectedRoute><AccumulatedEvidence /></ProtectedRoute>} />
+          <Route path="/identity/:habitId/progreso" element={<ProtectedRoute><IdentityProgress /></ProtectedRoute>} />
           <Route path="/me" element={<ProtectedRoute><Me /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

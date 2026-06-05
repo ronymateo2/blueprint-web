@@ -237,6 +237,14 @@ export function IdentityHabit() {
         >
           Continuar y registrar
         </Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Btn variant="outline" size="md" onClick={() => { setDirection('right'); navigate(`/identity/${habit.id}/evidencia/hoy`); }} style={{ flex: 1 }}>
+            Evidencia de hoy
+          </Btn>
+          <Btn variant="outline" size="md" onClick={() => { setDirection('right'); navigate(`/identity/${habit.id}/progreso`); }} style={{ flex: 1 }}>
+            Progreso
+          </Btn>
+        </div>
       </div>
 
       {/* Identity editor */}

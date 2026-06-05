@@ -1,17 +1,19 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus, SmileyIcon, SmileyMehIcon, SmileySadIcon } from '@phosphor-icons/react';
+import { ArrowLeft, Plus, Minus, SmileyIcon, SmileyMehIcon, SmileySadIcon, CheckCircleIcon } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { api, type Entry, type Habit } from '../api/client';
 import { HABITS_KEY, useHabits } from '../hooks/useHabits';
 import { useEntries } from '../hooks/useEntries';
 import { useAuthContext } from '../context/AuthContext';
 import { useNavDirection } from '../context/NavContext';
-import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
+import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
+import { dayEvidenceFor, type DayEvidence, type Energy } from '../lib/evidence';
 import { SketchBox } from '../components/ui/SketchBox';
 import { Btn } from '../components/ui/Btn';
 import { Ring } from '../components/ui/Ring';
+import { DayEnergyPicker } from '../components/identity/DayEnergyPicker';
+import { EvidenceList } from '../components/identity/EvidenceList';
 
 type Alignment = 'yes' | 'maybe' | 'no';
 
@@ -91,6 +93,7 @@ export function IdentityRegister() {
 function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | null }) {
   const navigate = useNavigate();
   const { setDirection } = useNavDirection();
+  const { timezone } = useAuthContext();
   const queryClient = useQueryClient();
 
   const isTime = habit.type === 'time';
@@ -99,8 +102,10 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
 
   const [value, setValue] = useState<number>(existing?.value ?? 0);
   const [alignment, setAlignment] = useState<Alignment | null>(existing?.alignment ?? null);
+  const [energy, setEnergy] = useState<Energy | null>(existing?.day_energy ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<DayEvidence | null>(null);
 
   const chips = isTime ? [5, 10, 15, 20, 30] : [1, 2, 3, 5, 8];
   const ringValue = isYn ? (value >= 1 ? 1 : 0) : Math.min(1, value / habit.goal);
@@ -121,15 +126,51 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
           value,
           note: note.trim() || undefined,
           alignment: alignment ?? undefined,
+          day_energy: energy ?? undefined,
         });
       }
       await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
-      toast(value > 0 ? 'Registro guardado' : 'Registro actualizado');
-      setDirection('left');
-      navigate('/identity');
+
+      // Build today's evidence from a short window (needs prior days for "volviste tras fallar").
+      const today = todayLocalDate(timezone);
+      const window = await api.entries.list({
+        habit_id: habit.id,
+        from: localDayUtcRange(addDays(today, -14), timezone).from,
+        to: localDayUtcRange(today, timezone).to,
+      });
+      setSaved(dayEvidenceFor(window, habit, timezone, today));
     } finally {
       setSaving(false);
     }
+  }
+
+  if (saved) {
+    return (
+      <div className="screen-scroll flex flex-col gap-[16px]" style={{ padding: '8px 14px 24px' }}>
+        <div className="flex flex-col items-center text-center" style={{ marginTop: 12, gap: 10 }}>
+          <CheckCircleIcon size={64} weight="fill" color="var(--coral)" />
+          <div className="font-display" style={{ fontSize: 28, lineHeight: 1.05 }}>¡Gracias por no abandonar!</div>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 15 }}>Esto también es parte de tu identidad.</div>
+        </div>
+
+        <SketchBox padding={16} radius={16}>
+          <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginBottom: 10 }}>Evidencia generada</div>
+          <EvidenceList statements={saved.statements} />
+        </SketchBox>
+
+        <Btn
+          variant="primary"
+          size="lg"
+          fullWidth
+          onClick={() => { setDirection('right'); navigate(`/identity/${habit.id}/evidencia/hoy`); }}
+        >
+          Ver mi identidad
+        </Btn>
+        <Btn variant="outline" size="md" fullWidth onClick={() => { setDirection('left'); navigate('/identity'); }}>
+          Volver
+        </Btn>
+      </div>
+    );
   }
 
   return (
@@ -203,6 +244,16 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
               </button>
             );
           })}
+        </div>
+      </SketchBox>
+
+      {/* Day energy */}
+      <SketchBox padding={14} radius={16}>
+        <div className="font-hand" style={{ fontSize: 16, lineHeight: 1.2 }}>
+          ¿Cómo estuvo tu día?
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <DayEnergyPicker value={energy} onChange={setEnergy} />
         </div>
       </SketchBox>
 
