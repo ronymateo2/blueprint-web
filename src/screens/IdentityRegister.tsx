@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, SmileyIcon, SmileyMehIcon, SmileySadIcon } from '@phosphor-icons/react';
+import { ArrowLeft, Plus, Minus, SmileyIcon, SmileyMehIcon, SmileySadIcon } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api, type Entry, type Habit } from '../api/client';
@@ -11,8 +11,8 @@ import { useNavDirection } from '../context/NavContext';
 import { todayLocalDate, localDayUtcRange } from '../lib/dateUtils';
 import { SketchBox } from '../components/ui/SketchBox';
 import { Btn } from '../components/ui/Btn';
+import { Ring } from '../components/ui/Ring';
 
-type Outcome = 'full' | 'min' | 'none';
 type Alignment = 'yes' | 'maybe' | 'no';
 
 const ALIGNMENTS: { key: Alignment; label: string; Icon: typeof SmileyIcon; selBg: string; selBorder: string }[] = [
@@ -27,6 +27,30 @@ const NOTE_STYLE: CSSProperties = {
   background: 'transparent', padding: '12px 14px',
   fontSize: 16, outline: 'none', resize: 'none',
 };
+
+function Stepper({ value, onChange, max }: { value: number; onChange: (v: number) => void; max: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <button
+        onClick={() => onChange(Math.max(0, value - 1))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: 44, height: 44, borderRadius: 999, border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)',
+        }}
+      ><Minus size={20} /></button>
+      <span className="font-display text-center" style={{ fontSize: 38, minWidth: 60, lineHeight: 1 }}>{value}</span>
+      <button
+        onClick={() => onChange(Math.min(max, value + 1))}
+        className="font-display bg-transparent cursor-pointer"
+        style={{
+          width: 44, height: 44, borderRadius: 999, border: '1.8px solid var(--ink)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)',
+        }}
+      ><Plus size={20} /></button>
+    </div>
+  );
+}
 
 export function IdentityRegister() {
   const { habitId } = useParams();
@@ -64,41 +88,34 @@ export function IdentityRegister() {
   );
 }
 
-function deriveOutcome(existing: Entry | null, habit: Habit): Outcome | null {
-  if (!existing) return null;
-  return existing.value >= habit.goal ? 'full' : 'min';
-}
-
 function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | null }) {
   const navigate = useNavigate();
   const { setDirection } = useNavDirection();
   const queryClient = useQueryClient();
 
-  const [outcome, setOutcome] = useState<Outcome | null>(() => deriveOutcome(existing, habit));
+  const isTime = habit.type === 'time';
+  const isYn = habit.type === 'yn';
+  const maxValue = isTime ? 240 : 50;
+
+  const [value, setValue] = useState<number>(existing?.value ?? 0);
   const [alignment, setAlignment] = useState<Alignment | null>(existing?.alignment ?? null);
   const [note, setNote] = useState(existing?.note ?? '');
   const [saving, setSaving] = useState(false);
 
-  const completoDesc = habit.unit
-    ? `Meta: ${habit.goal} ${habit.unit}`
-    : habit.goal > 1
-      ? `Meta: ${habit.goal}`
-      : 'Hice todo mi plan';
-
-  const outcomes: { key: Outcome; label: string; desc: string }[] = [
-    { key: 'full', label: 'Completo', desc: completoDesc },
-    { key: 'min', label: 'Mínimo', desc: habit.min_action || 'Hice la acción mínima' },
-    { key: 'none', label: 'No pude', desc: 'Hoy no hice nada' },
-  ];
+  const chips = isTime ? [5, 10, 15, 20, 30] : [1, 2, 3, 5, 8];
+  const ringValue = isYn ? (value >= 1 ? 1 : 0) : Math.min(1, value / habit.goal);
+  const done = isYn ? value >= 1 : value >= habit.goal;
+  const ringLabel = isTime ? `${value}′` : isYn ? (value >= 1 ? '✓' : '·') : `${value}`;
+  const ringSub = isYn
+    ? (done ? 'hecho' : 'sin marcar')
+    : `de ${habit.goal}${isTime ? ' min' : ''}`;
 
   async function save() {
-    if (!outcome) return;
     setSaving(true);
     try {
-      // Edit = replace: remove today's prior entry, then re-create (unless "No pude").
+      // Edit = replace: remove today's prior entry, then re-create (unless value is 0 = no pude).
       if (existing) await api.entries.delete(existing.id);
-      if (outcome !== 'none') {
-        const value = outcome === 'full' ? habit.goal : 1;
+      if (value > 0) {
         await api.entries.create({
           habit_id: habit.id,
           value,
@@ -107,7 +124,7 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
         });
       }
       await queryClient.invalidateQueries({ queryKey: HABITS_KEY });
-      toast(outcome === 'none' ? 'Registro actualizado' : 'Registro guardado');
+      toast(value > 0 ? 'Registro guardado' : 'Registro actualizado');
       setDirection('left');
       navigate('/identity');
     } finally {
@@ -122,40 +139,42 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
         {existing && <span className="font-hand text-ink-soft" style={{ fontSize: 13, marginLeft: 8 }}>· editando</span>}
       </div>
 
-      {/* Outcome */}
-      <SketchBox padding={4} radius={16}>
-        <div className="font-hand text-ink-soft" style={{ fontSize: 13, padding: '8px 12px 4px' }}>¿Cómo te fue?</div>
-        {outcomes.map((o, i) => {
-          const sel = outcome === o.key;
-          return (
-            <div
-              key={o.key}
-              onClick={() => setOutcome(o.key)}
-              className="cursor-pointer"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 14px', borderRadius: 12,
-                background: sel ? 'var(--coral-soft)' : 'transparent',
-                borderBottom: i === outcomes.length - 1 ? 'none' : '1.4px dashed var(--ink-soft)',
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div className="font-display" style={{ fontSize: 20, lineHeight: 1 }}>{o.label}</div>
-                <div className="font-hand text-ink-soft" style={{ fontSize: 13, marginTop: 2 }}>{o.desc}</div>
-              </div>
-              <div
-                className="flex items-center justify-center shrink-0"
-                style={{
-                  width: 24, height: 24, borderRadius: 12,
-                  border: `1.8px solid ${sel ? 'var(--coral)' : 'var(--ink-soft)'}`,
-                  background: sel ? 'var(--coral)' : 'transparent',
-                }}
-              >
-                {sel && <div style={{ width: 10, height: 10, borderRadius: 5, background: 'var(--paper)' }} />}
-              </div>
+      {/* Compact QuickAction — ring + stepper/chips */}
+      <SketchBox padding={16} radius={16}>
+        <div onClick={isYn ? () => setValue(value >= 1 ? 0 : 1) : undefined}
+          style={{ margin: '4px auto 0', width: 150, height: 150, cursor: isYn ? 'pointer' : 'default' }}>
+          <Ring
+            size={150}
+            stroke={11}
+            value={ringValue}
+            color={done ? 'var(--ink)' : 'var(--coral)'}
+            label={ringLabel}
+            labelSize={44}
+            sublabel={ringSub}
+          />
+        </div>
+
+        {!isYn && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 14 }}>
+              <Stepper value={value} onChange={setValue} max={maxValue} />
             </div>
-          );
-        })}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 12 }}>
+              {chips.map((v) => (
+                <Btn key={v} variant="chip" size="sm" active={v === value} onClick={() => setValue(v)}>
+                  {v}{isTime ? '′' : ''}
+                </Btn>
+              ))}
+              <Btn variant="chip" size="sm" active={value === 0} onClick={() => setValue(0)}>No pude</Btn>
+            </div>
+          </>
+        )}
+
+        <div className="font-hand text-ink-soft text-center" style={{ fontSize: 13, marginTop: 12 }}>
+          {value > 0
+            ? <>Vas a sumar <b style={{ color: 'var(--coral)' }}>+{habit.points * value} pts</b></>
+            : 'Hoy no hice nada'}
+        </div>
       </SketchBox>
 
       {/* Alignment */}
@@ -204,7 +223,6 @@ function RegisterForm({ habit, existing }: { habit: Habit; existing: Entry | nul
         size="lg"
         fullWidth
         loading={saving}
-        disabled={!outcome}
         onClick={() => void save()}
         style={{ marginTop: 4 }}
       >
