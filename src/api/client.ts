@@ -75,7 +75,7 @@ export interface Skip {
   local_date: string;
 }
 
-export type FrictionCause = 'no_time' | 'tired' | 'forgot' | 'mood' | 'other';
+export type FrictionCause = 'tired' | 'no_energy' | 'forgot' | 'resisted' | 'not_priority' | 'low_mood' | 'other';
 
 export interface FrictionLog {
   habit_id: string;
