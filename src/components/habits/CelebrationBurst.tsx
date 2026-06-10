@@ -1,20 +1,28 @@
 import { useState, type ReactNode } from 'react';
 import { ConfettiBurst } from './ConfettiBurst';
 import { LottieOverlay } from './LottieOverlay';
-import doneAnimation from './doneAnimation.json';
-import checkAnimation from './checkAnimation.json';
-import burstAnimation from './burstAnimation.json';
 
-type Celebration = { render: () => ReactNode };
+type Celebration =
+  | { kind: 'confetti' }
+  | { kind: 'lottie'; src: string };
 
 const CELEBRATIONS: Celebration[] = [
-  { render: () => <ConfettiBurst /> },
-  { render: () => <LottieOverlay animationData={doneAnimation} /> },
-  { render: () => <LottieOverlay animationData={checkAnimation} /> },
-  { render: () => <LottieOverlay animationData={burstAnimation} /> },
+  { kind: 'confetti' },
+  { kind: 'lottie', src: '/animations/done.lottie' },
+  { kind: 'lottie', src: '/animations/check.lottie' },
+  { kind: 'lottie', src: '/animations/burst.lottie' },
+  { kind: 'lottie', src: '/animations/success.lottie' },
 ];
 
+function pick(): Celebration {
+  return CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)];
+}
+
+function render(c: Celebration): ReactNode {
+  return c.kind === 'confetti' ? <ConfettiBurst /> : <LottieOverlay src={c.src} />;
+}
+
 export function CelebrationBurst() {
-  const [pick] = useState(() => CELEBRATIONS[Math.floor(Math.random() * CELEBRATIONS.length)]);
-  return pick.render();
+  const [choice] = useState(pick);
+  return render(choice);
 }
