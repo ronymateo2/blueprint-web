@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ConfettiIcon } from '@phosphor-icons/react';
 import { Ring } from '../ui/Ring';
 import { MiniBars } from '../habits/MiniBars';
@@ -17,7 +18,7 @@ interface DailyProgressProps {
   timezone: string;
 }
 
-export function DailyProgress({
+export const DailyProgress = memo(function DailyProgress({
   isFuture,
   isToday,
   activeHabitsCount,
@@ -112,4 +113,4 @@ export function DailyProgress({
       </div>
     </div>
   );
-}
+});

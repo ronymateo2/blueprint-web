@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { CaretDownIcon } from '@phosphor-icons/react';
 
 interface CollapsibleProps {
@@ -8,7 +8,7 @@ interface CollapsibleProps {
   hasDivider?: boolean;
 }
 
-export function Collapsible({
+export const Collapsible = memo(function Collapsible({
   title,
   children,
   defaultExpanded = false,
@@ -59,4 +59,4 @@ export function Collapsible({
       </div>
     </>
   );
-}
+});

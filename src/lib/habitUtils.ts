@@ -13,7 +13,12 @@ export function formatDayName(localDate: string, tz: string): string {
   return new Intl.DateTimeFormat('es', { weekday: 'long' }).format(noon);
 }
 
-export function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boolean {
+interface DateFormatters {
+  dateFmt?: Intl.DateTimeFormat;
+  weekdayShortFmt?: Intl.DateTimeFormat;
+}
+
+export function isHabitDueOnDate(h: Habit, localDate: string, tz: string, formatters?: DateFormatters): boolean {
   const ft = h.frequency_type ?? 'daily';
   if (ft === 'daily') return true;
   let cfg: Record<string, unknown> = {};
@@ -24,7 +29,8 @@ export function isHabitDueOnDate(h: Habit, localDate: string, tz: string): boole
 
   if (ft === 'weekly') {
     const days = (cfg.days as string[]) ?? [];
-    const short = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(noon);
+    const fmt = formatters?.weekdayShortFmt ?? new Intl.DateTimeFormat('en-US', { weekday: 'short' });
+    const short = fmt.format(noon);
     const map: Record<string, string> = { Mon: 'L', Tue: 'M', Wed: 'X', Thu: 'J', Fri: 'V', Sat: 'S', Sun: 'D' };
     return days.includes(map[short] ?? '');
   }

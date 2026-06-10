@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckIcon } from '@phosphor-icons/react';
 import { type Habit } from '../../api/client';
@@ -30,7 +30,7 @@ function habitSubtitle(h: Habit, todaySum: number): string {
   }
 }
 
-export function HabitCard({
+export const HabitCard = memo(function HabitCard({
   habit,
   sum,
   isSkipped,
@@ -178,4 +178,4 @@ export function HabitCard({
       </SketchBox>
     </div>
   );
-}
+});

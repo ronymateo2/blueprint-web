@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FireIcon, PlusIcon, CaretLeftIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { Scribble } from '../ui/Scribble';
@@ -15,7 +16,7 @@ interface HomeHeaderProps {
   onGoToday: () => void;
 }
 
-export function HomeHeader({
+export const HomeHeader = memo(function HomeHeader({
   selectedDate,
   timezone,
   displayPoints,
@@ -104,4 +105,4 @@ export function HomeHeader({
       </div>
     </div>
   );
-}
+});

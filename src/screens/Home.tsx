@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PlusIcon } from '@phosphor-icons/react';
 import { useHabits } from '../hooks/useHabits';
@@ -60,51 +60,53 @@ export function Home() {
   const [contextHabit, setContextHabit] = useState<Habit | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Habit | null>(null);
 
-  async function skipHabit(h: Habit) {
+  const skipHabit = useCallback(async (h: Habit) => {
     setContextHabit(null);
     await api.skips.create(h.id, selectedDate);
     await reloadSkips();
-  }
+  }, [selectedDate, reloadSkips]);
 
-  async function unskipHabit(h: Habit) {
+  const unskipHabit = useCallback(async (h: Habit) => {
     setContextHabit(null);
     await api.skips.delete(h.id, selectedDate);
     await reloadSkips();
-  }
+  }, [selectedDate, reloadSkips]);
 
-  async function archiveHabit(h: Habit) {
+  const archiveHabit = useCallback(async (h: Habit) => {
     setContextHabit(null);
     await api.habits.archive(h.id);
     await reloadHabits();
-  }
+  }, [reloadHabits]);
 
-  async function deleteHabit(h: Habit) {
+  const deleteHabit = useCallback((h: Habit) => {
     setContextHabit(null);
     setConfirmDelete(h);
-  }
+  }, []);
 
-  async function executeDelete() {
+  const executeDelete = useCallback(async () => {
     if (!confirmDelete) return;
     const h = confirmDelete;
     setConfirmDelete(null);
     await api.habits.delete(h.id);
     await reloadHabits();
-  }
+  }, [confirmDelete, reloadHabits]);
 
-  function goBack()    { setSelectedDate(d => addDays(d, -1)); }
-  function goForward() { setSelectedDate(d => addDays(d, +1)); }
-  function goToday()   { setSelectedDate(realToday); }
+  const goBack = useCallback(() => setSelectedDate(d => addDays(d, -1)), []);
+  const goForward = useCallback(() => setSelectedDate(d => addDays(d, +1)), []);
+  const goToday = useCallback(() => setSelectedDate(realToday), [realToday]);
 
   const isFuture = selectedDate > realToday;
 
   const activeHabits = useMemo(() => {
+    const dateFmt = new Intl.DateTimeFormat('en-CA', { timeZone: timezone });
+    const weekdayShortFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short' });
     return habits.filter(h => {
       if (h.archived_at) return false;
-      const createdLocalDate = new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(new Date(h.created_at));
+      const createdLocalDate = dateFmt.format(new Date(h.created_at));
       if (selectedDate < createdLocalDate) return false;
       if (h.start_date && selectedDate < h.start_date) return false;
       if (h.end_date && selectedDate > h.end_date) return false;
-      return isHabitDueOnDate(h, selectedDate, timezone);
+      return isHabitDueOnDate(h, selectedDate, timezone, { dateFmt, weekdayShortFmt });
     });
   }, [habits, selectedDate, timezone]);
 
@@ -166,22 +168,6 @@ export function Home() {
     );
   }
 
-  const renderHabitCard = (h: Habit) => (
-    <HabitCard
-      key={h.id}
-      habit={h}
-      sum={sumByHabit[h.id] ?? 0}
-      isSkipped={skippedIds.has(h.id)}
-      isFuture={isFuture}
-      isToday={isToday}
-      selectedDate={selectedDate}
-      timezone={timezone}
-      logState={logStates[h.id]}
-      onLog={logHabit}
-      onLongPress={setContextHabit}
-    />
-  );
-
   return (
     <div className="screen">
       {confettiActive && <ConfettiBurst key={confettiKey} />}
@@ -231,17 +217,59 @@ export function Home() {
           </SketchBox>
         ) : (
           <>
-            {pendingHabits.map(renderHabitCard)}
+            {pendingHabits.map(h => (
+              <HabitCard
+                key={h.id}
+                habit={h}
+                sum={sumByHabit[h.id] ?? 0}
+                isSkipped={skippedIds.has(h.id)}
+                isFuture={isFuture}
+                isToday={isToday}
+                selectedDate={selectedDate}
+                timezone={timezone}
+                logState={logStates[h.id]}
+                onLog={logHabit}
+                onLongPress={setContextHabit}
+              />
+            ))}
 
             {completedHabits.length > 0 && (
               <Collapsible title={`${doneHabits} ${doneHabits === 1 ? 'completado' : 'completados'}`}>
-                {completedHabits.map(renderHabitCard)}
+                {completedHabits.map(h => (
+                  <HabitCard
+                    key={h.id}
+                    habit={h}
+                    sum={sumByHabit[h.id] ?? 0}
+                    isSkipped={skippedIds.has(h.id)}
+                    isFuture={isFuture}
+                    isToday={isToday}
+                    selectedDate={selectedDate}
+                    timezone={timezone}
+                    logState={logStates[h.id]}
+                    onLog={logHabit}
+                    onLongPress={setContextHabit}
+                  />
+                ))}
               </Collapsible>
             )}
 
             {skippedHabits.length > 0 && (
               <Collapsible title={`${skippedHabits.length} ${skippedHabits.length === 1 ? 'salteado' : 'salteados'}`}>
-                {skippedHabits.map(renderHabitCard)}
+                {skippedHabits.map(h => (
+                  <HabitCard
+                    key={h.id}
+                    habit={h}
+                    sum={sumByHabit[h.id] ?? 0}
+                    isSkipped={skippedIds.has(h.id)}
+                    isFuture={isFuture}
+                    isToday={isToday}
+                    selectedDate={selectedDate}
+                    timezone={timezone}
+                    logState={logStates[h.id]}
+                    onLog={logHabit}
+                    onLongPress={setContextHabit}
+                  />
+                ))}
               </Collapsible>
             )}
           </>
