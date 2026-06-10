@@ -23,7 +23,7 @@ import { IdentityProgress } from './screens/IdentityProgress';
 import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
 import { HabitStatistics } from './screens/HabitStatistics';
-import { prefetchCelebrationLotties } from './components/habits/CelebrationBurst';
+import { prefetchCelebrationLotties } from './components/habits/celebrations';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
