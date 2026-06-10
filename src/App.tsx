@@ -23,6 +23,7 @@ import { IdentityProgress } from './screens/IdentityProgress';
 import { Archive } from './screens/Archive';
 import { HabitHistory } from './screens/HabitHistory';
 import { HabitStatistics } from './screens/HabitStatistics';
+import { prefetchCelebrationLotties } from './components/habits/CelebrationBurst';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthContext();
@@ -109,6 +110,7 @@ export function App() {
     if (display) document.documentElement.style.setProperty('--font-display', display);
     const hand = localStorage.getItem('habit_hand_font');
     if (hand) document.documentElement.style.setProperty('--font-hand', hand);
+    prefetchCelebrationLotties();
   }, []);
 
   return (

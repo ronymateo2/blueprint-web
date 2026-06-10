@@ -2,19 +2,23 @@ import { useState, type ReactNode } from 'react';
 import { ConfettiBurst } from './ConfettiBurst';
 import { LottieOverlay } from './LottieOverlay';
 
+export const LOTTIE_CELEBRATIONS = [
+  '/animations/done.lottie',
+  '/animations/check.lottie',
+  '/animations/burst.lottie',
+  '/animations/success.lottie',
+  '/animations/tick.lottie',
+  '/animations/yoga.lottie',
+  '/animations/search.lottie',
+] as const;
+
 type Celebration =
   | { kind: 'confetti' }
   | { kind: 'lottie'; src: string };
 
 const CELEBRATIONS: Celebration[] = [
   { kind: 'confetti' },
-  { kind: 'lottie', src: '/animations/done.lottie' },
-  { kind: 'lottie', src: '/animations/check.lottie' },
-  { kind: 'lottie', src: '/animations/burst.lottie' },
-  { kind: 'lottie', src: '/animations/success.lottie' },
-  { kind: 'lottie', src: '/animations/tick.lottie' },
-  { kind: 'lottie', src: '/animations/yoga.lottie' },
-  { kind: 'lottie', src: '/animations/search.lottie' },
+  ...LOTTIE_CELEBRATIONS.map((src) => ({ kind: 'lottie' as const, src })),
 ];
 
 function pick(): Celebration {
@@ -28,4 +32,18 @@ function render(c: Celebration): ReactNode {
 export function CelebrationBurst() {
   const [choice] = useState(pick);
   return render(choice);
+}
+
+const prefetched = new Set<string>();
+
+export function prefetchCelebrationLotties() {
+  for (const src of LOTTIE_CELEBRATIONS) {
+    if (prefetched.has(src)) continue;
+    prefetched.add(src);
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.as = 'fetch';
+    link.href = src;
+    document.head.appendChild(link);
+  }
 }
