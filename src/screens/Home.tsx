@@ -14,7 +14,7 @@ import { Btn } from '../components/ui/Btn';
 import { Collapsible } from '../components/ui/Collapsible';
 import { todayLocalDate, localDayUtcRange, addDays } from '../lib/dateUtils';
 import { useAuthContext } from '../context/AuthContext';
-import { ConfettiBurst } from '../components/habits/ConfettiBurst';
+import { CelebrationBurst } from '../components/habits/CelebrationBurst';
 import { isHabitDueOnDate } from '../lib/habitUtils';
 import { useHabitLogger } from '../hooks/useHabitLogger';
 import { HomeHeader } from '../components/home/HomeHeader';
@@ -170,7 +170,7 @@ export function Home() {
 
   return (
     <div className="screen">
-      {confettiActive && <ConfettiBurst key={confettiKey} />}
+      {confettiActive && <CelebrationBurst key={confettiKey} />}
 
       <HomeHeader
         selectedDate={selectedDate}

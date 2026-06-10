@@ -13,7 +13,7 @@ import { SketchBox } from '../ui/SketchBox';
 import { Btn } from '../ui/Btn';
 import { Ring } from '../ui/Ring';
 import { HandIcon } from '../ui/HandIcon';
-import { ConfettiBurst } from '../habits/ConfettiBurst';
+import { CelebrationBurst } from '../habits/CelebrationBurst';
 import { useCountdown } from '../../hooks/useCountdown';
 
 const SECONDS = 20;
@@ -102,7 +102,7 @@ export function MentalRehearsalSheet({ open, onClose, identity }: MentalRehearsa
 
   return (
     <BottomSheet open={open} onClose={close} dismissable={phase !== 'active'} maxHeight="92%">
-      {phase === 'done' && <ConfettiBurst />}
+      {phase === 'done' && <CelebrationBurst />}
       <div
         style={{
           display: 'flex',
