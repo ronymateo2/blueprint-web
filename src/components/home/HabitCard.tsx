@@ -155,7 +155,11 @@ export const HabitCard = memo(function HabitCard({
           >
             {logState === 'logging' ? '…' : (logState === 'done' || logState === 'exiting') ? (
               <CheckIcon size={28} weight="bold" style={{ animation: 'check-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) both' }} />
-            ) : valueLabel}
+            ) : (
+              <span key={sum} style={{ display: 'inline-block', animation: done ? 'scale-bounce 250ms ease' : undefined }}>
+                {valueLabel}
+              </span>
+            )}
           </div>
           {habit.type !== 'yn' && !isFuture && !isSkipped && (
             <div style={{
