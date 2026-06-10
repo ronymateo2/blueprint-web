@@ -12,6 +12,9 @@ const CELEBRATIONS: Celebration[] = [
   { kind: 'lottie', src: '/animations/check.lottie' },
   { kind: 'lottie', src: '/animations/burst.lottie' },
   { kind: 'lottie', src: '/animations/success.lottie' },
+  { kind: 'lottie', src: '/animations/tick.lottie' },
+  { kind: 'lottie', src: '/animations/yoga.lottie' },
+  { kind: 'lottie', src: '/animations/search.lottie' },
 ];
 
 function pick(): Celebration {
