@@ -3,6 +3,8 @@ export const LOTTIE_CELEBRATIONS = [
   '/animations/burst.lottie',
   '/animations/tick.lottie',
   '/animations/search.lottie',
+  '/animations/successCheck.lottie',
+  '/animations/people.lottie',
 ] as const;
 
 const prefetched = new Set<string>();
