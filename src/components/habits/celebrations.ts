@@ -1,10 +1,7 @@
 export const LOTTIE_CELEBRATIONS = [
   '/animations/done.lottie',
-  '/animations/check.lottie',
   '/animations/burst.lottie',
-  '/animations/success.lottie',
   '/animations/tick.lottie',
-  '/animations/yoga.lottie',
   '/animations/search.lottie',
 ] as const;
 

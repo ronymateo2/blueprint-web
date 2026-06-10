@@ -8,7 +8,7 @@ type Celebration =
   | { kind: 'lottie'; src: string };
 
 const CELEBRATIONS: Celebration[] = [
-  { kind: 'confetti' },
+  // { kind: 'confetti' },
   ...LOTTIE_CELEBRATIONS.map((src) => ({ kind: 'lottie' as const, src })),
 ];
 
