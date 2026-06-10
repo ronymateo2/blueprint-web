@@ -1,7 +1,18 @@
 const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+const fmtCache = new Map<string, Intl.DateTimeFormat>();
+export function fmt(locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = locale + '|' + JSON.stringify(opts);
+  let f = fmtCache.get(key);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, opts);
+    fmtCache.set(key, f);
+  }
+  return f;
+}
+
 export function utcToLocalDate(isoUtc: string, tz = browserTz): string {
-  return new Intl.DateTimeFormat('sv-SE', { timeZone: tz, dateStyle: 'short' }).format(new Date(isoUtc));
+  return fmt('sv-SE', { timeZone: tz, dateStyle: 'short' }).format(new Date(isoUtc));
 }
 
 export function todayLocalDate(tz = browserTz): string {
@@ -17,7 +28,7 @@ export function daysAgoLocalDate(n: number, tz = browserTz): string {
 export function localDayUtcRange(localDate: string, tz = browserTz): { from: string; to: string } {
   // Find UTC offset by comparing probe UTC time vs its local representation
   const probe = new Date(`${localDate}T12:00:00Z`);
-  const localStr = new Intl.DateTimeFormat('sv-SE', {
+  const localStr = fmt('sv-SE', {
     timeZone: tz, dateStyle: 'short', timeStyle: 'medium',
   }).format(probe); // e.g. "2026-05-18 07:00:00"
   const offsetMs = probe.getTime() - new Date(localStr.replace(' ', 'T') + 'Z').getTime();
@@ -35,7 +46,7 @@ export function addDays(localDate: string, n: number): string {
 }
 
 export function formatTime(isoUtc: string, tz = browserTz): string {
-  return new Intl.DateTimeFormat('es', {
+  return fmt('es', {
     timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false,
   }).format(new Date(isoUtc));
 }

@@ -1,16 +1,16 @@
 import { type Habit } from '../api/client';
-import { localDayUtcRange } from './dateUtils';
+import { localDayUtcRange, fmt } from './dateUtils';
 
 export function formatSelectedDate(localDate: string, tz: string): string {
   const { from } = localDayUtcRange(localDate, tz);
   const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
-  return new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(noon);
+  return fmt('es', { weekday: 'long', day: 'numeric', month: 'short' }).format(noon);
 }
 
 export function formatDayName(localDate: string, tz: string): string {
   const { from } = localDayUtcRange(localDate, tz);
   const noon = new Date(new Date(from).getTime() + 12 * 3_600_000);
-  return new Intl.DateTimeFormat('es', { weekday: 'long' }).format(noon);
+  return fmt('es', { weekday: 'long' }).format(noon);
 }
 
 interface DateFormatters {
@@ -29,8 +29,7 @@ export function isHabitDueOnDate(h: Habit, localDate: string, tz: string, format
 
   if (ft === 'weekly') {
     const days = (cfg.days as string[]) ?? [];
-    const fmt = formatters?.weekdayShortFmt ?? new Intl.DateTimeFormat('en-US', { weekday: 'short' });
-    const short = fmt.format(noon);
+    const short = (formatters?.weekdayShortFmt ?? fmt('en-US', { weekday: 'short' })).format(noon);
     const map: Record<string, string> = { Mon: 'L', Tue: 'M', Wed: 'X', Thu: 'J', Fri: 'V', Sat: 'S', Sun: 'D' };
     return days.includes(map[short] ?? '');
   }

@@ -24,13 +24,13 @@ export function Home() {
   const navigate = useNavigate();
   const { timezone } = useAuthContext();
   const { habits, loading: habitsLoading, reload: reloadHabits } = useHabits();
-  const { stats, loading: statsLoading, reload: reloadStats } = useHomeStats();
+  const { stats, reload: reloadStats } = useHomeStats();
   const realToday = todayLocalDate(timezone);
   const [selectedDate, setSelectedDate] = useState(realToday);
   const isToday = selectedDate === realToday;
   const { from, to } = localDayUtcRange(selectedDate, timezone);
-  const { entries, loading: entriesLoading, reload: reloadEntries } = useEntries({ from, to });
-  const { skips, loading: skipsLoading, reload: reloadSkips } = useSkips(selectedDate);
+  const { entries, reload: reloadEntries } = useEntries({ from, to });
+  const { skips, reload: reloadSkips } = useSkips(selectedDate);
 
   const skippedIds = useMemo(() => new Set(skips.map((s) => s.habit_id)), [skips]);
 
@@ -160,7 +160,7 @@ export function Home() {
 
   const weeklyChart = stats?.weeklyChart ?? [];
 
-  if (habitsLoading || statsLoading || entriesLoading || skipsLoading) {
+  if (habitsLoading) {
     return (
       <div className="screen items-center justify-center">
         <span className="font-hand text-ink-soft">Cargando…</span>

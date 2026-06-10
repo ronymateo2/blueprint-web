@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { api, type Habit } from '../api/client';
 import { useUndo } from './useUndo';
 
@@ -26,6 +26,18 @@ export function useHabitLogger({
   const [confettiKey, setConfettiKey] = useState(0);
   const confettiTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const liveRef = useRef({
+    logStates, completingHabitIds, skippedIds, sumByHabit, isToday, from,
+    reloadEntries, reloadStats, showToast,
+  });
+
+  useEffect(() => {
+    liveRef.current = {
+      logStates, completingHabitIds, skippedIds, sumByHabit, isToday, from,
+      reloadEntries, reloadStats, showToast,
+    };
+  }, [logStates, completingHabitIds, skippedIds, sumByHabit, isToday, from, reloadEntries, reloadStats, showToast]);
+
   useEffect(() => {
     return () => {
       if (confettiTimer.current) {
@@ -34,8 +46,9 @@ export function useHabitLogger({
     };
   }, []);
 
-  async function logHabit(habit: Habit, e: React.MouseEvent) {
+  const logHabit = useCallback(async (habit: Habit, e: React.MouseEvent) => {
     e.stopPropagation();
+    const { logStates, skippedIds, sumByHabit, isToday, from, reloadEntries, reloadStats, showToast } = liveRef.current;
     if (logStates[habit.id] || skippedIds.has(habit.id)) return;
 
     const currentSum = sumByHabit[habit.id] ?? 0;
@@ -86,7 +99,7 @@ export function useHabitLogger({
       setLogStates(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
       setCompletingHabitIds(prev => { const n = { ...prev }; delete n[habit.id]; return n; });
     }
-  }
+  }, []);
 
   return {
     logStates,
