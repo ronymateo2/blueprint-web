@@ -16,7 +16,7 @@ export function BottomSheet({ open, onClose, children, dismissable = true, maxHe
   useEffect(() => {
     if (open) {
       setRender(true);
-      requestAnimationFrame(() => setVisible(true));
+      requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)));
     } else {
       setVisible(false);
       const t = setTimeout(() => setRender(false), 260);
