@@ -30,18 +30,6 @@ export function TabBar() {
       className="tabbar-float absolute left-0 right-0 bottom-0 z-20"
       style={{ pointerEvents: 'none' }}
     >
-      {/* fade content into paper before it slides under the glass bar */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          top: -28,
-          background: 'linear-gradient(to bottom, transparent, var(--paper) 65%)',
-        }}
-      />
       <nav
         className="relative flex"
         style={{
@@ -49,9 +37,9 @@ export function TabBar() {
           margin: '0 14px calc(10px + env(safe-area-inset-bottom))',
           borderRadius: 'var(--radius-pill)',
           padding: 5,
-          background: 'rgba(250, 246, 238, 0.78)',
-          backdropFilter: 'blur(16px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+          background: 'rgba(250, 246, 238, 0.45)',
+          backdropFilter: 'blur(20px) saturate(1.8)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.8)',
           border: '1px solid rgba(42, 42, 42, 0.08)',
           boxShadow: '0 8px 24px rgba(0, 0, 0, 0.10), 0 2px 6px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55)',
         }}
