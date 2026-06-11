@@ -47,14 +47,16 @@ export const Collapsible = memo(function Collapsible({
       </button>
       <div
         style={{
-          maxHeight: expanded ? '1000px' : '0px',
+          display: 'grid',
+          gridTemplateRows: expanded ? '1fr' : '0fr',
           opacity: expanded ? 1 : 0,
-          transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
-          overflow: expanded ? 'visible' : 'hidden',
+          transition: 'grid-template-rows 0.28s ease-in-out, opacity 0.22s ease-in-out',
         }}
       >
-        <div className="flex flex-col gap-[10px]" style={{ paddingTop: '4px', paddingBottom: '4px' }}>
-          {children}
+        <div style={{ overflow: 'hidden', minHeight: 0 }}>
+          <div className="flex flex-col gap-[10px]" style={{ padding: '4px 3px 5px 0' }}>
+            {children}
+          </div>
         </div>
       </div>
     </>

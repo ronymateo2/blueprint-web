@@ -61,6 +61,14 @@ body {
   border-radius: 4px;
 }
 
+/* floating glass tab bar overlays content — reserve space at scroll end.
+   TabBar is a sibling of the routes container (App.tsx), not inside .screen,
+   so the :has() check must be at #root level. !important because screens set
+   bottom padding via inline styles (20/24/100px) which would otherwise win. */
+#root:has(.tabbar-float) .screen-scroll {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+}
+
 .shadow-sketch { box-shadow: var(--shadow-sketch); }
 .shadow-float  { box-shadow: var(--shadow-float);  }
 
