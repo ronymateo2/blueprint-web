@@ -1,6 +1,6 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
-export function LottieOverlay({ src, size = 280 }: { src: string; size?: number }) {
+export function LottieOverlay({ data, size = 280 }: { data: ArrayBuffer; size?: number }) {
   return (
     <div
       style={{
@@ -14,7 +14,7 @@ export function LottieOverlay({ src, size = 280 }: { src: string; size?: number 
       }}
     >
       <DotLottieReact
-        src={src}
+        data={data}
         loop={false}
         autoplay
         style={{ width: size, height: size }}
